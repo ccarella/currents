@@ -16,7 +16,7 @@ const DesignSystemShowcase = () => {
             This paragraph uses Spectral (serif) font with base size and relaxed line height.
           </p>
           <code className="font-mono text-sm">
-            const example = 'JetBrains Mono for code';
+            const example = &apos;JetBrains Mono for code&apos;;
           </code>
         </section>
 
