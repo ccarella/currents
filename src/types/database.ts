@@ -43,12 +43,16 @@ export interface Database {
   };
 }
 
-export type Tables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Row'];
-export type Insertable<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Insert'];
-export type Updatable<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Update'];
+export type Tables<T extends keyof Database['public']['Tables']> =
+  Database['public']['Tables'][T]['Row'];
+export type Insertable<T extends keyof Database['public']['Tables']> =
+  Database['public']['Tables'][T]['Insert'];
+export type Updatable<T extends keyof Database['public']['Tables']> =
+  Database['public']['Tables'][T]['Update'];
 
 export type DbResult<T> = T extends PromiseLike<infer U> ? U : never;
-export type DbResultOk<T> = T extends PromiseLike<{ data: infer U }> ? Exclude<U, null> : never;
+export type DbResultOk<T> =
+  T extends PromiseLike<{ data: infer U }> ? Exclude<U, null> : never;
 export type DbResultErr = { error: Error };
 
 export interface QueryOptions {

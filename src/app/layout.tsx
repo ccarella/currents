@@ -1,35 +1,35 @@
-import type { Metadata } from "next";
-import { Inter, JetBrains_Mono, Spectral } from "next/font/google";
-import "./globals.css";
+import type { Metadata } from 'next';
+import { Inter, JetBrains_Mono, Spectral } from 'next/font/google';
+import './globals.css';
 
 // Optimize font loading with subset and display swap
 const inter = Inter({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-inter",
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
   preload: true,
-  weight: ["400", "500", "600", "700"],
+  weight: ['400', '500', '600', '700'],
 });
 
 const jetbrainsMono = JetBrains_Mono({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-jetbrains-mono",
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-jetbrains-mono',
   preload: true,
-  weight: ["400", "500", "600"],
+  weight: ['400', '500', '600'],
 });
 
 const spectral = Spectral({
-  subsets: ["latin"],
-  display: "swap",
-  variable: "--font-spectral",
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-spectral',
   preload: true,
-  weight: ["400", "500", "600", "700"],
+  weight: ['400', '500', '600', '700'],
 });
 
 export const metadata: Metadata = {
-  title: "Currents Platform",
-  description: "Design system showcase with optimized typography",
+  title: 'Currents Platform',
+  description: 'Design system showcase with optimized typography',
 };
 
 export default function RootLayout({
@@ -38,7 +38,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${spectral.variable} ${jetbrainsMono.variable}`}>
+    <html
+      lang="en"
+      className={`${inter.variable} ${spectral.variable} ${jetbrainsMono.variable}`}
+    >
       <head>
         <link
           rel="preconnect"
@@ -51,9 +54,7 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
       </head>
-      <body className="font-serif antialiased">
-        {children}
-      </body>
+      <body className="font-serif antialiased">{children}</body>
     </html>
   );
 }
