@@ -18,7 +18,7 @@
     "type-check": "tsc --noEmit",
     "type-check:watch": "tsc --noEmit --watch",
     "prepare": "husky",
-    "postinstall": "npm run db:types",
+    "postinstall": "node -e \"if (process.env.VERCEL !== '1' && process.env.CI !== 'true') { require('child_process').execSync('npm run db:types', {stdio: 'inherit'}); }\"",
     "clean": "rm -rf .next node_modules",
     "reinstall": "npm run clean && npm install",
     "dev:db": "concurrently \"npm run db:start\" \"npm run dev\"",

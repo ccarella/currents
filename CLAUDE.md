@@ -122,6 +122,11 @@ The following environment variables are needed for different features:
 
 Create a `.env.local` file for local development with the above variables. For production, configure these in your hosting platform (e.g., Vercel, Netlify).
 
+### Notes
+
+- The `postinstall` script automatically generates TypeScript types from your local Supabase database, but only runs in local development (not in CI/CD environments like Vercel)
+- To manually generate types: `npm run db:types` (local) or `npm run db:types:remote` (from production)
+
 ## Architecture Overview
 
 This is a Next.js 15.3.4 application using the App Router pattern with TypeScript and Tailwind CSS v4.
