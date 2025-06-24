@@ -28,6 +28,18 @@ Lint code:
 npm run lint
 ```
 
+Run tests:
+
+```bash
+npm test
+```
+
+Run all tests including E2E:
+
+```bash
+npm run test:run
+```
+
 ## Architecture Overview
 
 This is a Next.js 15.3.4 application using the App Router pattern with TypeScript and Tailwind CSS v4.
@@ -39,6 +51,9 @@ This is a Next.js 15.3.4 application using the App Router pattern with TypeScrip
 - **Language**: TypeScript 5+
 - **Styling**: Tailwind CSS v4
 - **Font**: Geist font family
+- **Testing**: Vitest for unit and integration tests
+- **Code Quality**: ESLint with custom rules, Prettier for formatting
+- **Pre-commit Hooks**: Husky and lint-staged
 
 ### Project Structure
 
@@ -58,6 +73,12 @@ This is a Next.js 15.3.4 application using the App Router pattern with TypeScrip
 ### Development Notes
 
 - The development server uses Turbopack for faster builds (`--turbopack` flag)
-- No testing framework is currently configured
-- ESLint is configured with Next.js recommended rules
+- Vitest is configured for testing with React Testing Library
+- ESLint is configured with:
+  - Next.js recommended rules
+  - TypeScript strict typing (no-explicit-any enforced)
+  - Accessibility rules (jsx-a11y)
+  - Security and performance rules
+  - Prettier integration for consistent formatting
+- Pre-commit hooks automatically run linting and formatting via husky
 - TypeScript strict mode is enabled in tsconfig.json
