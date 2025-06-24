@@ -1,17 +1,41 @@
-export default function TypographyTestPage() {
-  const sectionStyle = { marginBottom: '3rem' };
+'use client'
+
+import { useMemo } from 'react'
+
+// Memoized color swatch component for performance
+const ColorSwatch = ({ shade, type }: { shade: number; type: 'primary' | 'gray' }) => {
+  const textColor = shade >= 500 ? 'text-white' : 'text-gray-900'
   
   return (
-    <div className="container" style={{ paddingTop: '2rem', paddingBottom: '2rem' }}>
-      <section style={sectionStyle}>
+    <div className="text-center">
+      <div 
+        className={`h-16 rounded ${textColor} flex items-center justify-center`}
+        style={{ backgroundColor: `var(--color-${type}-${shade})` }}
+        role="img"
+        aria-label={`${type} color shade ${shade}`}
+      >
+        <span className="font-medium">{shade}</span>
+      </div>
+    </div>
+  )
+}
+
+export default function TypographyTestPage() {
+  // Optimize color rendering with useMemo
+  const primaryColors = useMemo(() => [50, 100, 200, 300, 400, 500, 600, 700, 800, 900], [])
+  const grayColors = useMemo(() => [50, 100, 200, 300, 400, 500, 600, 700, 800, 900], [])
+
+  return (
+    <main className="container py-8 space-y-12">
+      <header>
         <h1 className="mb-8">Typography Test Page</h1>
-        <p style={{ color: 'var(--muted-foreground)' }}>
+        <p className="text-muted-foreground">
           This page demonstrates the Tailwind CSS v4 design system with custom fonts, colors, and typography scale.
         </p>
-      </section>
+      </header>
 
-      <section style={sectionStyle}>
-        <h2>Font Families</h2>
+      <section className="space-y-6" aria-labelledby="font-families">
+        <h2 id="font-families">Font Families</h2>
         <div className="space-y-4">
           <div>
             <h3 className="font-sans">Inter (Headlines)</h3>
@@ -28,8 +52,8 @@ export default function TypographyTestPage() {
         </div>
       </section>
 
-      <section style={sectionStyle}>
-        <h2>Typography Scale</h2>
+      <section className="space-y-6" aria-labelledby="typography-scale">
+        <h2 id="typography-scale">Typography Scale</h2>
         <div className="space-y-4">
           <h1>Heading 1 - 3rem</h1>
           <h2>Heading 2 - 2.25rem</h2>
@@ -48,62 +72,50 @@ export default function TypographyTestPage() {
         </div>
       </section>
 
-      <section style={sectionStyle}>
-        <h2>Color Palette</h2>
+      <section className="space-y-6" aria-labelledby="color-palette">
+        <h2 id="color-palette">Color Palette</h2>
         <div className="space-y-6">
           <div>
             <h3>Primary Colors</h3>
-            <div className="grid grid-cols-5 gap-2">
-              {[50, 100, 200, 300, 400, 500, 600, 700, 800, 900].map((shade) => (
-                <div key={shade} className="text-center">
-                  <div 
-                    className="h-16 rounded" 
-                    style={{ backgroundColor: `var(--color-primary-${shade})` }}
-                  />
-                  <p className="text-xs mt-1">{shade}</p>
-                </div>
+            <div className="grid grid-cols-5 gap-2" role="group" aria-label="Primary color swatches">
+              {primaryColors.map((shade) => (
+                <ColorSwatch key={shade} shade={shade} type="primary" />
               ))}
             </div>
           </div>
           <div>
             <h3>Gray Colors</h3>
-            <div className="grid grid-cols-5 gap-2">
-              {[50, 100, 200, 300, 400, 500, 600, 700, 800, 900].map((shade) => (
-                <div key={shade} className="text-center">
-                  <div 
-                    className="h-16 rounded" 
-                    style={{ backgroundColor: `var(--color-gray-${shade})` }}
-                  />
-                  <p className="text-xs mt-1">{shade}</p>
-                </div>
+            <div className="grid grid-cols-5 gap-2" role="group" aria-label="Gray color swatches">
+              {grayColors.map((shade) => (
+                <ColorSwatch key={shade} shade={shade} type="gray" />
               ))}
             </div>
           </div>
           <div>
             <h3>Theme Colors</h3>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-2" role="group" aria-label="Theme color swatches">
               <div className="text-center">
-                <div className="h-16 rounded" style={{ backgroundColor: 'var(--background)', border: '1px solid var(--border)' }} />
+                <div className="h-16 rounded bg-background border border-border" role="img" aria-label="Background color" />
                 <p className="text-xs mt-1">Background</p>
               </div>
               <div className="text-center">
-                <div className="h-16 rounded" style={{ backgroundColor: 'var(--foreground)' }} />
+                <div className="h-16 rounded bg-foreground" role="img" aria-label="Foreground color" />
                 <p className="text-xs mt-1">Foreground</p>
               </div>
               <div className="text-center">
-                <div className="h-16 rounded" style={{ backgroundColor: 'var(--muted)' }} />
+                <div className="h-16 rounded bg-muted" role="img" aria-label="Muted color" />
                 <p className="text-xs mt-1">Muted</p>
               </div>
               <div className="text-center">
-                <div className="h-16 rounded" style={{ backgroundColor: 'var(--accent)' }} />
+                <div className="h-16 rounded bg-accent" role="img" aria-label="Accent color" />
                 <p className="text-xs mt-1">Accent</p>
               </div>
               <div className="text-center">
-                <div className="h-16 rounded" style={{ border: '2px solid var(--border)' }} />
+                <div className="h-16 rounded border-2 border-border" role="img" aria-label="Border color example" />
                 <p className="text-xs mt-1">Border</p>
               </div>
               <div className="text-center">
-                <div className="h-16 rounded" style={{ boxShadow: `0 0 0 2px var(--ring)` }} />
+                <div className="h-16 rounded ring-ring" role="img" aria-label="Ring color example" />
                 <p className="text-xs mt-1">Ring</p>
               </div>
             </div>
@@ -111,45 +123,45 @@ export default function TypographyTestPage() {
         </div>
       </section>
 
-      <section style={sectionStyle}>
-        <h2>Line Heights</h2>
+      <section className="space-y-6" aria-labelledby="line-heights">
+        <h2 id="line-heights">Line Heights</h2>
         <div className="space-y-4">
           <div>
             <h3>Tight (1.25)</h3>
-            <p className="leading-tight" style={{ borderLeft: '4px solid var(--color-primary-500)', paddingLeft: '1rem' }}>
+            <p className="leading-tight border-l-4 border-primary-500 pl-4">
               Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
             </p>
           </div>
           <div>
             <h3>Snug (1.375)</h3>
-            <p className="leading-snug" style={{ borderLeft: '4px solid var(--color-primary-500)', paddingLeft: '1rem' }}>
+            <p className="leading-snug border-l-4 border-primary-500 pl-4">
               Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
             </p>
           </div>
           <div>
             <h3>Normal (1.5)</h3>
-            <p className="leading-normal" style={{ borderLeft: '4px solid var(--color-primary-500)', paddingLeft: '1rem' }}>
+            <p className="leading-normal border-l-4 border-primary-500 pl-4">
               Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
             </p>
           </div>
           <div>
             <h3>Relaxed (1.625)</h3>
-            <p className="leading-relaxed" style={{ borderLeft: '4px solid var(--color-primary-500)', paddingLeft: '1rem' }}>
+            <p className="leading-relaxed border-l-4 border-primary-500 pl-4">
               Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
             </p>
           </div>
           <div>
             <h3>Loose (1.75)</h3>
-            <p className="leading-loose" style={{ borderLeft: '4px solid var(--color-primary-500)', paddingLeft: '1rem' }}>
+            <p className="leading-loose border-l-4 border-primary-500 pl-4">
               Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
             </p>
           </div>
         </div>
       </section>
 
-      <section style={sectionStyle}>
-        <h2>Content Width Constraint</h2>
-        <div style={{ backgroundColor: 'var(--muted)', padding: '1.5rem', borderRadius: '0.375rem' }}>
+      <section className="space-y-6" aria-labelledby="content-width">
+        <h2 id="content-width">Content Width Constraint</h2>
+        <div className="bg-muted p-6 rounded-md">
           <p>
             This content is contained within the max-width constraint of 650px. The container class ensures that content doesn&apos;t stretch too wide on larger screens, maintaining optimal readability.
           </p>
@@ -159,9 +171,9 @@ export default function TypographyTestPage() {
         </div>
       </section>
 
-      <section style={sectionStyle}>
-        <h2>Code Blocks</h2>
-        <pre style={{ backgroundColor: 'var(--muted)', padding: '1rem', borderRadius: '0.375rem', overflowX: 'auto' }}>
+      <section className="space-y-6" aria-labelledby="code-blocks">
+        <h2 id="code-blocks">Code Blocks</h2>
+        <pre className="bg-muted p-4 rounded overflow-x-auto" aria-label="Example code block">
           <code className="font-mono text-sm">{`// Example code block with JetBrains Mono font
 function greet(name: string): string {
   return \`Hello, \${name}!\`;
@@ -172,22 +184,22 @@ console.log(message); // Output: Hello, World!`}</code>
         </pre>
       </section>
 
-      <section style={sectionStyle}>
-        <h2>Responsive Design</h2>
-        <p className="text-sm" style={{ color: 'var(--muted-foreground)' }}>
+      <section className="space-y-6" aria-labelledby="responsive-design">
+        <h2 id="responsive-design">Responsive Design</h2>
+        <p className="text-sm text-muted-foreground">
           Resize your browser window to test the responsive behavior of the design system.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div style={{ backgroundColor: 'var(--color-primary-100)', padding: '1rem', borderRadius: '0.375rem' }}>
+          <div className="bg-primary-100 dark:bg-primary-900 p-4 rounded">
             <h3 className="font-sans">Column 1</h3>
             <p>This layout responds to different screen sizes.</p>
           </div>
-          <div style={{ backgroundColor: 'var(--color-primary-100)', padding: '1rem', borderRadius: '0.375rem' }}>
+          <div className="bg-primary-100 dark:bg-primary-900 p-4 rounded">
             <h3 className="font-sans">Column 2</h3>
             <p>On mobile, these columns stack vertically.</p>
           </div>
         </div>
       </section>
-    </div>
+    </main>
   );
 }

@@ -87,16 +87,10 @@ describe('CSS Variables Validation', () => {
   })
 
   describe('Font Family Configuration', () => {
-    it('should import custom fonts from Google Fonts', () => {
-      expect(cssContent).toContain("@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');")
-      expect(cssContent).toContain("@import url('https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500;1,600;1,700&display=swap');")
-      expect(cssContent).toContain("@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap');")
-    })
-
-    it('should define font family variables in @theme', () => {
-      expect(cssContent).toMatch(/--font-sans:\s*'Inter',\s*var\(--font-geist-sans\),\s*system-ui,\s*sans-serif;/)
-      expect(cssContent).toMatch(/--font-serif:\s*'Spectral',\s*Georgia,\s*serif;/)
-      expect(cssContent).toMatch(/--font-mono:\s*'JetBrains Mono',\s*var\(--font-geist-mono\),\s*monospace;/)
+    it('should define font family variables in @theme using Next.js font variables', () => {
+      expect(cssContent).toMatch(/--font-sans:\s*var\(--font-inter\),\s*system-ui,\s*sans-serif;/)
+      expect(cssContent).toMatch(/--font-serif:\s*var\(--font-spectral\),\s*Georgia,\s*serif;/)
+      expect(cssContent).toMatch(/--font-mono:\s*var\(--font-jetbrains-mono\),\s*monospace;/)
     })
   })
 

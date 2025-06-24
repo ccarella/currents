@@ -68,10 +68,7 @@ describe('TypographyTestPage', () => {
     const mainContainer = container.querySelector('.container')
     
     expect(mainContainer).toBeInTheDocument()
-    expect(mainContainer).toHaveStyle({
-      paddingTop: '2rem',
-      paddingBottom: '2rem'
-    })
+    expect(mainContainer).toHaveClass('container', 'py-8', 'space-y-12')
   })
 
   it('should have proper section spacing', () => {
@@ -79,7 +76,7 @@ describe('TypographyTestPage', () => {
     const sections = container.querySelectorAll('section')
     
     sections.forEach(section => {
-      expect(section).toHaveStyle({ marginBottom: '3rem' })
+      expect(section).toHaveClass('space-y-6')
     })
   })
 })
