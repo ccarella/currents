@@ -9,7 +9,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Build and run the development server:
 
 ```bash
-npm run dev
+npm run dev              # Run Next.js development server
+npm run dev:db           # Run Supabase and Next.js concurrently
 ```
 
 Build for production:
@@ -101,6 +102,25 @@ npm run supabase:functions:deploy # Deploy Edge Functions
 npm run clean      # Remove build artifacts and node_modules
 npm run reinstall  # Clean and reinstall dependencies
 ```
+
+## Environment Variables Required
+
+The following environment variables are needed for different features:
+
+### Supabase Configuration
+
+- `SUPABASE_PROJECT_ID` - Required for remote type generation (`npm run db:types:remote`)
+- `NEXT_PUBLIC_SUPABASE_URL` - Your Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Your Supabase anonymous key
+- `SUPABASE_SERVICE_ROLE_KEY` - Service role key for server-side operations
+
+### Optional Features
+
+- `OPENAI_API_KEY` - Optional, for Supabase AI features and embeddings
+
+### Development vs Production
+
+Create a `.env.local` file for local development with the above variables. For production, configure these in your hosting platform (e.g., Vercel, Netlify).
 
 ## Architecture Overview
 

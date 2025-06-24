@@ -9,8 +9,7 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     include: ['**/*.e2e.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
     globals: true,
-    timeout: 30000, // 30 seconds for e2e tests
-    testTimeout: 30000,
+    testTimeout: 30000, // 30 seconds for e2e tests
   },
   resolve: {
     alias: {
