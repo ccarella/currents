@@ -87,7 +87,7 @@ describe('CSS Variables Validation', () => {
   })
 
   describe('Font Family Configuration', () => {
-    it('should define font family variables in @theme using Next.js font variables', () => {
+    it('should define font family variables in :root using Next.js font variables', () => {
       expect(cssContent).toMatch(/--font-sans:\s*var\(--font-inter\),\s*system-ui,\s*sans-serif;/)
       expect(cssContent).toMatch(/--font-serif:\s*var\(--font-spectral\),\s*Georgia,\s*serif;/)
       expect(cssContent).toMatch(/--font-mono:\s*var\(--font-jetbrains-mono\),\s*monospace;/)

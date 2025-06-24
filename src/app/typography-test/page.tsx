@@ -2,17 +2,56 @@
 
 import { useMemo } from 'react'
 
-// Memoized color swatch component for performance
-const ColorSwatch = ({ shade, type }: { shade: number; type: 'primary' | 'gray' }) => {
+// Individual color swatch components to avoid dynamic class generation and use pure utility classes
+const PrimaryColorSwatch = ({ shade }: { shade: number }) => {
   const textColor = shade >= 500 ? 'text-white' : 'text-gray-900'
+  const bgClasses: Record<number, string> = {
+    50: 'bg-primary-50',
+    100: 'bg-primary-100',
+    200: 'bg-primary-200',
+    300: 'bg-primary-300',
+    400: 'bg-primary-400',
+    500: 'bg-primary-500',
+    600: 'bg-primary-600',
+    700: 'bg-primary-700',
+    800: 'bg-primary-800',
+    900: 'bg-primary-900',
+  }
   
   return (
     <div className="text-center">
       <div 
-        className={`h-16 rounded ${textColor} flex items-center justify-center`}
-        style={{ backgroundColor: `var(--color-${type}-${shade})` }}
+        className={`h-16 rounded ${bgClasses[shade]} ${textColor} flex items-center justify-center`}
         role="img"
-        aria-label={`${type} color shade ${shade}`}
+        aria-label={`primary color shade ${shade}`}
+      >
+        <span className="font-medium">{shade}</span>
+      </div>
+    </div>
+  )
+}
+
+const GrayColorSwatch = ({ shade }: { shade: number }) => {
+  const textColor = shade >= 500 ? 'text-white' : 'text-gray-900'
+  const bgClasses: Record<number, string> = {
+    50: 'bg-gray-50',
+    100: 'bg-gray-100',
+    200: 'bg-gray-200',
+    300: 'bg-gray-300',
+    400: 'bg-gray-400',
+    500: 'bg-gray-500',
+    600: 'bg-gray-600',
+    700: 'bg-gray-700',
+    800: 'bg-gray-800',
+    900: 'bg-gray-900',
+  }
+  
+  return (
+    <div className="text-center">
+      <div 
+        className={`h-16 rounded ${bgClasses[shade]} ${textColor} flex items-center justify-center`}
+        role="img"
+        aria-label={`gray color shade ${shade}`}
       >
         <span className="font-medium">{shade}</span>
       </div>
@@ -22,8 +61,7 @@ const ColorSwatch = ({ shade, type }: { shade: number; type: 'primary' | 'gray' 
 
 export default function TypographyTestPage() {
   // Optimize color rendering with useMemo
-  const primaryColors = useMemo(() => [50, 100, 200, 300, 400, 500, 600, 700, 800, 900], [])
-  const grayColors = useMemo(() => [50, 100, 200, 300, 400, 500, 600, 700, 800, 900], [])
+  const colorShades = useMemo(() => [50, 100, 200, 300, 400, 500, 600, 700, 800, 900], [])
 
   return (
     <main className="container py-8 space-y-12">
@@ -78,16 +116,16 @@ export default function TypographyTestPage() {
           <div>
             <h3>Primary Colors</h3>
             <div className="grid grid-cols-5 gap-2" role="group" aria-label="Primary color swatches">
-              {primaryColors.map((shade) => (
-                <ColorSwatch key={shade} shade={shade} type="primary" />
+              {colorShades.map((shade) => (
+                <PrimaryColorSwatch key={shade} shade={shade} />
               ))}
             </div>
           </div>
           <div>
             <h3>Gray Colors</h3>
             <div className="grid grid-cols-5 gap-2" role="group" aria-label="Gray color swatches">
-              {grayColors.map((shade) => (
-                <ColorSwatch key={shade} shade={shade} type="gray" />
+              {colorShades.map((shade) => (
+                <GrayColorSwatch key={shade} shade={shade} />
               ))}
             </div>
           </div>

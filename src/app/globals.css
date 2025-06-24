@@ -44,6 +44,11 @@
   /* Layout */
   --max-width-content: 650px;
   
+  /* Font families - using Next.js font variables */
+  --font-sans: var(--font-inter), system-ui, sans-serif;
+  --font-serif: var(--font-spectral), Georgia, serif;
+  --font-mono: var(--font-jetbrains-mono), monospace;
+  
   /* Light theme */
   --background: #ffffff;
   --foreground: #111827;
@@ -53,14 +58,6 @@
   --accent-foreground: #111827;
   --border: #e5e7eb;
   --ring: #0ea5e9;
-}
-
-/* Tailwind v4 theme configuration */
-@theme inline {
-  /* Custom fonts - using Next.js font variables */
-  --font-sans: var(--font-inter), system-ui, sans-serif;
-  --font-serif: var(--font-spectral), Georgia, serif;
-  --font-mono: var(--font-jetbrains-mono), monospace;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -240,12 +237,85 @@ code, pre {
 }
 
 /* Primary color utilities */
+.bg-primary-50 {
+  background-color: var(--color-primary-50);
+}
+
 .bg-primary-100 {
   background-color: var(--color-primary-100);
 }
 
+.bg-primary-200 {
+  background-color: var(--color-primary-200);
+}
+
+.bg-primary-300 {
+  background-color: var(--color-primary-300);
+}
+
+.bg-primary-400 {
+  background-color: var(--color-primary-400);
+}
+
 .bg-primary-500 {
   background-color: var(--color-primary-500);
+}
+
+.bg-primary-600 {
+  background-color: var(--color-primary-600);
+}
+
+.bg-primary-700 {
+  background-color: var(--color-primary-700);
+}
+
+.bg-primary-800 {
+  background-color: var(--color-primary-800);
+}
+
+.bg-primary-900 {
+  background-color: var(--color-primary-900);
+}
+
+/* Gray color utilities */
+.bg-gray-50 {
+  background-color: var(--color-gray-50);
+}
+
+.bg-gray-100 {
+  background-color: var(--color-gray-100);
+}
+
+.bg-gray-200 {
+  background-color: var(--color-gray-200);
+}
+
+.bg-gray-300 {
+  background-color: var(--color-gray-300);
+}
+
+.bg-gray-400 {
+  background-color: var(--color-gray-400);
+}
+
+.bg-gray-500 {
+  background-color: var(--color-gray-500);
+}
+
+.bg-gray-600 {
+  background-color: var(--color-gray-600);
+}
+
+.bg-gray-700 {
+  background-color: var(--color-gray-700);
+}
+
+.bg-gray-800 {
+  background-color: var(--color-gray-800);
+}
+
+.bg-gray-900 {
+  background-color: var(--color-gray-900);
 }
 
 .border-primary-500 {
