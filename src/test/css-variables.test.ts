@@ -117,7 +117,7 @@ describe('CSS Variables Validation', () => {
 
   describe('Base Styles', () => {
     it('should set html font-size to 16px for rem calculations', () => {
-      expect(cssContent).toMatch(/html\s*{\s*font-size:\s*16px;.*?}/s)
+      expect(cssContent).toMatch(/html\s*{\s*font-size:\s*16px;[^}]*}/)
     })
 
     it('should apply correct body styles', () => {

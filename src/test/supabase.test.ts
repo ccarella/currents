@@ -19,8 +19,8 @@ describe('Supabase Configuration', () => {
 
   it('should create a Supabase client with environment variables', async () => {
     // Set environment variables
-    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co'
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key'
+    process.env['NEXT_PUBLIC_SUPABASE_URL'] = 'https://test.supabase.co'
+    process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] = 'test-anon-key'
 
     // Import the module (this will trigger the client creation)
     const { supabase } = await import('../lib/supabase')
@@ -38,8 +38,8 @@ describe('Supabase Configuration', () => {
 
   it('should throw an error if environment variables are missing', async () => {
     // Clear environment variables
-    delete process.env.NEXT_PUBLIC_SUPABASE_URL
-    delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    delete process.env['NEXT_PUBLIC_SUPABASE_URL']
+    delete process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']
 
     // Attempt to import should throw an error
     await expect(async () => {
@@ -49,8 +49,8 @@ describe('Supabase Configuration', () => {
 
   it('should throw an error if only URL is missing', async () => {
     // Set only one environment variable
-    delete process.env.NEXT_PUBLIC_SUPABASE_URL
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key'
+    delete process.env['NEXT_PUBLIC_SUPABASE_URL']
+    process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] = 'test-anon-key'
 
     await expect(async () => {
       await import('../lib/supabase')
@@ -59,8 +59,8 @@ describe('Supabase Configuration', () => {
 
   it('should throw an error if only anon key is missing', async () => {
     // Set only one environment variable
-    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co'
-    delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    process.env['NEXT_PUBLIC_SUPABASE_URL'] = 'https://test.supabase.co'
+    delete process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY']
 
     await expect(async () => {
       await import('../lib/supabase')
