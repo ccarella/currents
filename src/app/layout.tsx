@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter, JetBrains_Mono, Spectral } from 'next/font/google';
 import './globals.css';
 import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
 import { AuthProvider } from '@/lib/AuthContext';
 
 // Optimize font loading with subset and display swap
@@ -56,10 +57,11 @@ export default function RootLayout({
           crossOrigin="anonymous"
         />
       </head>
-      <body className="font-serif antialiased">
+      <body className="font-serif antialiased flex flex-col min-h-screen">
         <AuthProvider>
           <Header />
-          {children}
+          <main className="flex-1">{children}</main>
+          <Footer />
         </AuthProvider>
       </body>
     </html>

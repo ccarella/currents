@@ -46,6 +46,7 @@
     "@supabase/supabase-js": "^2.50.1",
     "@uiw/react-md-editor": "^4.0.7",
     "date-fns": "^4.1.0",
+    "lucide-react": "^0.523.0",
     "next": "15.3.4",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
