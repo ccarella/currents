@@ -12,7 +12,7 @@ interface UseRequireAuthOptions {
 export function useRequireAuth(options: UseRequireAuthOptions = {}) {
   const { user, loading, isAuthenticated } = useAuth();
   const router = useRouter();
-  const { redirectTo = '/signin', onUnauthenticated } = options;
+  const { redirectTo = '/auth/sign-in', onUnauthenticated } = options;
 
   useEffect(() => {
     if (!loading && !isAuthenticated) {

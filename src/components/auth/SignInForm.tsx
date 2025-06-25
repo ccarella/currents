@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -22,6 +22,7 @@ export default function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const redirect = searchParams.get('redirect') || '/';
+  const { signIn } = useAuth();
 
   const {
     register,
@@ -36,11 +37,7 @@ export default function SignInForm() {
     setIsLoading(true);
 
     try {
-      const supabase = createClient();
-      const { error } = await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
-      });
+      const { error } = await signIn(data.email, data.password);
 
       if (error) {
         setError('root', {
@@ -51,10 +48,13 @@ export default function SignInForm() {
         router.push(redirect);
         router.refresh();
       }
-    } catch {
+    } catch (error) {
       setError('root', {
         type: 'manual',
-        message: 'An unexpected error occurred. Please try again.',
+        message:
+          error instanceof Error
+            ? error.message
+            : 'An unexpected error occurred. Please try again.',
       });
     } finally {
       setIsLoading(false);
