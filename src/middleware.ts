@@ -42,7 +42,7 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   // Define protected routes
-  const protectedRoutes = ['/dashboard', '/profile', '/settings'];
+  const protectedRoutes = ['/write', '/profile', '/dashboard', '/settings'];
   const authRoutes = ['/auth/sign-in', '/auth/sign-up'];
 
   const isProtectedRoute = protectedRoutes.some((route) =>
@@ -56,6 +56,8 @@ export async function middleware(request: NextRequest) {
   if (!user && isProtectedRoute) {
     const url = request.nextUrl.clone();
     url.pathname = '/auth/sign-in';
+    // Preserve the intended destination for redirect after login
+    url.searchParams.set('redirect', request.nextUrl.pathname);
     return NextResponse.redirect(url);
   }
 
@@ -84,14 +86,10 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     * - images - .svg, .png, .jpg, .jpeg, .gif, .webp
-     * Feel free to modify this pattern to include more paths.
-     */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/write',
+    '/profile/:path*',
+    '/dashboard/:path*',
+    '/settings/:path*',
+    '/auth/:path*',
   ],
 };

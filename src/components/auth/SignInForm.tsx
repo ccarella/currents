@@ -7,7 +7,7 @@ import { z } from 'zod';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
 const signInSchema = z.object({
@@ -20,6 +20,8 @@ type SignInFormData = z.infer<typeof signInSchema>;
 export default function SignInForm() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirect = searchParams.get('redirect') || '/';
 
   const {
     register,
@@ -46,7 +48,7 @@ export default function SignInForm() {
           message: error.message,
         });
       } else {
-        router.push('/');
+        router.push(redirect);
         router.refresh();
       }
     } catch {
