@@ -14,17 +14,21 @@ vi.mock('@supabase/ssr', () => ({
 
 describe('Supabase Client Configuration', () => {
   const originalEnv = process.env;
+  const originalWindow = global.window;
 
   beforeEach(() => {
     // Reset environment variables
     process.env = { ...originalEnv };
     // Clear module cache to reset singleton
     vi.resetModules();
+    // Mock window object for browser environment
+    global.window = {} as Window & typeof globalThis;
   });
 
   afterEach(() => {
-    // Restore original env
+    // Restore original env and window
     process.env = originalEnv;
+    global.window = originalWindow;
   });
 
   it('should create a client with valid environment variables', async () => {
@@ -66,5 +70,18 @@ describe('Supabase Client Configuration', () => {
     const client2 = createClient();
 
     expect(client1).toBe(client2);
+  });
+
+  it('should throw error when used in server environment', async () => {
+    // Remove window to simulate server environment
+    delete (global as { window?: Window }).window;
+
+    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
+
+    const { createClient } = await import('../client');
+    expect(() => createClient()).toThrow(
+      'Client should only be used in browser environment'
+    );
   });
 });

@@ -5,8 +5,8 @@ import type { Database } from '@/types/database.types';
 export async function createClient() {
   const cookieStore = await cookies();
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseUrl = process.env['NEXT_PUBLIC_SUPABASE_URL'];
+  const supabaseAnonKey = process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'];
 
   if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error('Missing Supabase environment variables');
@@ -22,10 +22,18 @@ export async function createClient() {
           cookiesToSet.forEach(({ name, value, options }) => {
             cookieStore.set(name, value, options);
           });
-        } catch {
-          // The `set` method was called from a Server Component.
-          // This can be ignored if you have middleware refreshing
-          // user sessions.
+        } catch (error) {
+          // Only ignore errors from Server Components
+          if (
+            error instanceof Error &&
+            error.message.includes(
+              'cookies() can only be called in a Server Component'
+            )
+          ) {
+            // This is expected in Server Components
+          } else {
+            console.warn('Unexpected error setting cookies:', error);
+          }
         }
       },
     },

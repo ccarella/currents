@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createClient } from '../server';
 
 // Mock Next.js cookies
@@ -28,6 +28,10 @@ describe('Supabase Server Configuration', () => {
 
   beforeEach(() => {
     process.env = { ...originalEnv };
+  });
+
+  afterEach(() => {
+    process.env = originalEnv;
   });
 
   it('should create a server client with valid environment variables', async () => {
