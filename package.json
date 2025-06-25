@@ -33,6 +33,9 @@
     "db:migrate:list": "supabase migration list",
     "db:types": "supabase gen types typescript --local > src/types/database.generated.ts",
     "db:types:remote": "supabase gen types typescript --project-id $SUPABASE_PROJECT_ID > src/types/database.generated.ts",
+    "db:seed": "supabase db reset --db-url postgresql://postgres:postgres@localhost:54322/postgres && psql postgresql://postgres:postgres@localhost:54322/postgres -f supabase/seed/seed.sql",
+    "db:seed:only": "psql postgresql://postgres:postgres@localhost:54322/postgres -f supabase/seed/seed.sql",
+    "db:reset:hard": "psql postgresql://postgres:postgres@localhost:54322/postgres -f supabase/seed/reset.sql",
     "supabase:link": "supabase link",
     "supabase:functions:serve": "supabase functions serve",
     "supabase:functions:deploy": "supabase functions deploy"
