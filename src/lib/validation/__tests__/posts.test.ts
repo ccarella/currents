@@ -42,7 +42,7 @@ describe('Post Validation Schemas', () => {
       const result = createPostSchema.safeParse(invalidPost);
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error.errors[0].message).toBe('Title is required');
+        expect(result.error.errors[0]?.message).toBe('Title is required');
       }
     });
 
@@ -55,7 +55,7 @@ describe('Post Validation Schemas', () => {
       const result = createPostSchema.safeParse(invalidPost);
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error.errors[0].message).toBe('Title is too long');
+        expect(result.error.errors[0]?.message).toBe('Title is too long');
       }
     });
 
@@ -69,7 +69,7 @@ describe('Post Validation Schemas', () => {
       const result = createPostSchema.safeParse(invalidPost);
       expect(result.success).toBe(false);
       if (!result.success) {
-        expect(result.error.errors[0].message).toBe('Excerpt is too long');
+        expect(result.error.errors[0]?.message).toBe('Excerpt is too long');
       }
     });
 

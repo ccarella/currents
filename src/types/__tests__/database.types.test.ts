@@ -14,7 +14,9 @@ describe('Database Types', () => {
     type Tables = PublicSchema['Tables'];
 
     // These are compile-time checks
-    const _tableCheck: keyof Tables = 'post_tags' as const;
+    const tableCheck: keyof Tables = 'post_tags' as const;
+    // Use the variable to avoid unused warning
+    expect(tableCheck).toBe('post_tags');
 
     expect(true).toBe(true); // Runtime assertion to make test pass
   });

@@ -35,8 +35,8 @@ describe('Supabase Server Configuration', () => {
   });
 
   it('should create a server client with valid environment variables', async () => {
-    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
+    process.env['NEXT_PUBLIC_SUPABASE_URL'] = 'https://test.supabase.co';
+    process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] = 'test-anon-key';
 
     const client = await createClient();
     expect(client).toBeDefined();
@@ -44,8 +44,8 @@ describe('Supabase Server Configuration', () => {
   });
 
   it('should throw error when SUPABASE_URL is missing', async () => {
-    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
+    delete process.env['NEXT_PUBLIC_SUPABASE_URL'];
+    process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] = 'test-anon-key';
 
     await expect(createClient()).rejects.toThrow(
       'Missing Supabase environment variables'
@@ -53,8 +53,8 @@ describe('Supabase Server Configuration', () => {
   });
 
   it('should throw error when SUPABASE_ANON_KEY is missing', async () => {
-    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
-    delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    process.env['NEXT_PUBLIC_SUPABASE_URL'] = 'https://test.supabase.co';
+    delete process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'];
 
     await expect(createClient()).rejects.toThrow(
       'Missing Supabase environment variables'

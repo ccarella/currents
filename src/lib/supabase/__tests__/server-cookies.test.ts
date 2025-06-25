@@ -18,14 +18,15 @@ vi.mock('next/headers', () => ({
 describe('Supabase Server Cookie Handling', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
+    process.env['NEXT_PUBLIC_SUPABASE_URL'] = 'https://test.supabase.co';
+    process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] = 'test-anon-key';
   });
 
   it('should pass cookie getAll functionality correctly', async () => {
     await createClient();
 
     const mockCall = vi.mocked(createServerClient).mock.calls[0];
+    if (!mockCall) throw new Error('Mock not called');
     const cookieConfig = mockCall[2];
 
     // Test getAll
@@ -38,6 +39,7 @@ describe('Supabase Server Cookie Handling', () => {
     await createClient();
 
     const mockCall = vi.mocked(createServerClient).mock.calls[0];
+    if (!mockCall) throw new Error('Mock not called');
     const cookieConfig = mockCall[2];
 
     // Test setAll
@@ -50,7 +52,7 @@ describe('Supabase Server Cookie Handling', () => {
       },
     ];
 
-    cookieConfig.cookies.setAll(cookiesToSet);
+    cookieConfig.cookies.setAll?.(cookiesToSet);
 
     expect(mockCookieStore.set).toHaveBeenCalledTimes(2);
     expect(mockCookieStore.set).toHaveBeenCalledWith('auth-token', 'token123', {
@@ -76,11 +78,12 @@ describe('Supabase Server Cookie Handling', () => {
     await createClient();
 
     const mockCall = vi.mocked(createServerClient).mock.calls[0];
+    if (!mockCall) throw new Error('Mock not called');
     const cookieConfig = mockCall[2];
 
     // Should not throw
     expect(() => {
-      cookieConfig.cookies.setAll([
+      cookieConfig.cookies.setAll?.([
         { name: 'test', value: 'value', options: {} },
       ]);
     }).not.toThrow();
@@ -105,11 +108,12 @@ describe('Supabase Server Cookie Handling', () => {
     await createClient();
 
     const mockCall = vi.mocked(createServerClient).mock.calls[0];
+    if (!mockCall) throw new Error('Mock not called');
     const cookieConfig = mockCall[2];
 
     // Should not throw
     expect(() => {
-      cookieConfig.cookies.setAll([
+      cookieConfig.cookies.setAll?.([
         { name: 'test', value: 'value', options: {} },
       ]);
     }).not.toThrow();
