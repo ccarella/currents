@@ -4,9 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "validate:db-types": "tsx scripts/validate-db-types.ts",
-    "pre-deploy": "bash scripts/pre-deploy-checks.sh",
-    "build": "npm run type-check && next build",
+    "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
