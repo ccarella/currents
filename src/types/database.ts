@@ -27,12 +27,59 @@ export interface Database {
           updated_at?: string;
         };
       };
+      posts: {
+        Row: {
+          id: string;
+          user_id: string;
+          title: string;
+          content: string;
+          slug: string;
+          created_at: string;
+          previous_post_archived_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          title: string;
+          content: string;
+          slug?: string;
+          created_at?: string;
+          previous_post_archived_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          title?: string;
+          content?: string;
+          slug?: string;
+          created_at?: string;
+          previous_post_archived_at?: string | null;
+        };
+      };
     };
     Views: {
       [_ in never]: never;
     };
     Functions: {
-      [_ in never]: never;
+      get_active_post: {
+        Args: {
+          p_user_id: string;
+        };
+        Returns: {
+          id: string;
+          user_id: string;
+          title: string;
+          content: string;
+          slug: string;
+          created_at: string;
+        };
+      };
+      generate_slug: {
+        Args: {
+          input_text: string;
+        };
+        Returns: string;
+      };
     };
     Enums: {
       [_ in never]: never;
