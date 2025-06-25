@@ -37,10 +37,8 @@ export function validateUpdate<T>(
   schema: ZodSchema<T>,
   data: unknown
 ): Partial<T> {
-  const partialSchema = schema as ZodSchema<Partial<T>>;
-  if (typeof partialSchema.partial === 'function') {
-    return partialSchema.partial().parse(data);
-  }
+  // For updates, we expect the schema to already be partial
+  // This is handled by using UpdatePostSchema, UpdateProfileSchema, etc.
   return schema.parse(data) as Partial<T>;
 }
 

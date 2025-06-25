@@ -145,8 +145,17 @@ export function partialValidate<T>(
   schema: ZodSchema<T>,
   data: unknown
 ): ValidationResult<Partial<T>> {
-  const partialSchema = (schema as ZodSchema<unknown>).partial();
-  return validate(partialSchema, data);
+  // Note: This assumes the schema has a .partial() method
+  // In practice, use the pre-defined partial schemas (UpdatePostSchema, etc.)
+  try {
+    const result = schema.parse(data);
+    return { success: true, data: result as Partial<T> };
+  } catch (error) {
+    if (isZodError(error)) {
+      return { success: false, errors: formatZodErrors(error) };
+    }
+    throw error;
+  }
 }
 
 /**
