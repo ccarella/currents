@@ -126,6 +126,8 @@ Create a `.env.local` file for local development with the above variables. For p
 
 - The `postinstall` script automatically generates TypeScript types from your local Supabase database, but only runs in local development (not in CI/CD environments like Vercel)
 - To manually generate types: `npm run db:types` (local) or `npm run db:types:remote` (from production)
+- Type generation is NOT run during the build process to ensure compatibility with deployment environments
+- Pre-commit hooks will automatically check and regenerate types when available
 
 ## Architecture Overview
 

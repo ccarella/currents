@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Skip in CI/Vercel environments
+if [ "$CI" = "true" ] || [ "$VERCEL" = "1" ]; then
+  echo "⚠️  Running in CI/Vercel environment. Skipping type generation check."
+  exit 0
+fi
+
 # Check if Supabase is running
 if ! npx supabase status 2>/dev/null | grep -q "DB URL"; then
   echo "⚠️  Supabase is not running. Skipping type generation check."
