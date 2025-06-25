@@ -19,9 +19,11 @@ export function PostForm({ userId }: { userId: string }) {
 
     try {
       await postsService.createPost({
-        user_id: userId,
+        author_id: userId,
         title,
         content,
+        slug: title.toLowerCase().replace(/\s+/g, '-'),
+        status: 'published',
       });
 
       setSuccess(true);

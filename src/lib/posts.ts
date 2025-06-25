@@ -1,12 +1,12 @@
-import { createClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/database';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database.types';
 
 export type Post = Database['public']['Tables']['posts']['Row'];
 export type NewPost = Database['public']['Tables']['posts']['Insert'];
 export type UpdatePost = Database['public']['Tables']['posts']['Update'];
 
 export class PostsService {
-  constructor(private supabase: ReturnType<typeof createClient<Database>>) {}
+  constructor(private supabase: SupabaseClient<Database>) {}
 
   /**
    * Create a new post for a user (will replace any existing active post)
@@ -26,12 +26,16 @@ export class PostsService {
    * Get the active post for a user using the database function
    */
   async getActivePost(userId: string) {
-    const { data: post, error } = await this.supabase
-      .rpc('get_active_post', { p_user_id: userId })
-      .single();
+    const { data: posts, error } = await this.supabase
+      .from('posts')
+      .select('*')
+      .eq('author_id', userId)
+      .eq('status', 'published')
+      .order('created_at', { ascending: false })
+      .limit(1);
 
-    if (error && error.code !== 'PGRST116') throw error; // PGRST116 = no rows found
-    return post;
+    if (error) throw error;
+    return posts?.[0] || null;
   }
 
   /**
@@ -41,7 +45,7 @@ export class PostsService {
     const { data: posts, error } = await this.supabase
       .from('posts')
       .select('*')
-      .eq('user_id', userId)
+      .eq('author_id', userId)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -57,15 +61,15 @@ export class PostsService {
       .select(
         `
         *,
-        users!inner(
+        profiles!inner(
           id,
-          email,
-          name,
+          username,
+          full_name,
           avatar_url
         )
       `
       )
-      .is('previous_post_archived_at', null)
+      .eq('status', 'published')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -81,10 +85,10 @@ export class PostsService {
       .select(
         `
         *,
-        users!inner(
+        profiles!inner(
           id,
-          email,
-          name,
+          username,
+          full_name,
           avatar_url
         )
       `
@@ -127,23 +131,24 @@ export class PostsService {
    * Generate a slug from text using the database function
    */
   async generateSlug(text: string) {
-    const { data: slug, error } = await this.supabase
-      .rpc('generate_slug', { input_text: text })
-      .single();
-
-    if (error) throw error;
-    return slug;
+    // Generate slug locally instead of using database function
+    return text
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, '') // Remove special characters
+      .replace(/\s+/g, '-') // Replace spaces with hyphens
+      .replace(/-+/g, '-'); // Replace multiple hyphens with single hyphen
   }
 
   /**
-   * Archive all posts for a user (set previous_post_archived_at to now)
+   * Archive all posts for a user (set status to 'archived')
    */
   async archiveUserPosts(userId: string) {
     const { error } = await this.supabase
       .from('posts')
-      .update({ previous_post_archived_at: new Date().toISOString() })
-      .eq('user_id', userId)
-      .is('previous_post_archived_at', null);
+      .update({ status: 'archived' })
+      .eq('author_id', userId)
+      .neq('status', 'archived');
 
     if (error) throw error;
   }

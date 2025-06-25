@@ -2,12 +2,12 @@
 
 import { createContext, useContext, ReactNode } from 'react';
 import { PostsService } from '@/lib/posts';
-import { getSupabaseClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/client';
 
 const PostsServiceContext = createContext<PostsService | null>(null);
 
 export function PostsServiceProvider({ children }: { children: ReactNode }) {
-  const supabase = getSupabaseClient();
+  const supabase = createClient();
   const postsService = new PostsService(supabase);
 
   return (
