@@ -1,0 +1,48 @@
+name: Validate Database Types
+
+on:
+  pull_request:
+    paths:
+      - 'src/types/database.generated.ts'
+      - 'src/types/schemas.ts'
+      - 'src/lib/validation/**'
+      - 'supabase/migrations/**'
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/types/database.generated.ts'
+      - 'src/types/schemas.ts'
+      - 'src/lib/validation/**'
+      - 'supabase/migrations/**'
+
+jobs:
+  validate-types:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run type checking
+        run: npm run type-check
+
+      - name: Run validation tests
+        run: |
+          npm run test:run -- src/types/__tests__/schemas.test.ts
+          npm run test:run -- src/lib/validation/__tests__/
+
+      - name: Validate database types match remote
+        env:
+          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+        run: npm run validate:db-types
+        if: env.SUPABASE_PROJECT_ID != ''

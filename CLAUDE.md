@@ -129,6 +129,17 @@ Create a `.env.local` file for local development with the above variables. For p
 - Type generation is NOT run during the build process to ensure compatibility with deployment environments
 - Pre-commit hooks will automatically check and regenerate types when available
 
+### Type Safety & Validation
+
+To ensure type safety in production:
+
+1. **Local Development**: Types are automatically generated and validated via pre-commit hooks
+2. **CI/CD Pipeline**: GitHub Actions validates that committed types match the remote database schema
+3. **Pre-deployment**: Run `npm run validate:db-types` to verify types match production
+4. **Runtime Validation**: All database operations use Zod schemas for runtime type safety
+
+Set `SUPABASE_PROJECT_ID` in your CI environment to enable remote type validation.
+
 ## Architecture Overview
 
 This is a Next.js 15.3.4 application using the App Router pattern with TypeScript and Tailwind CSS v4.
