@@ -1,4 +1,4 @@
-import { createBrowserClient } from '@supabase/ssr';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database.types';
 
 export type Post = Database['public']['Tables']['posts']['Row'];
@@ -6,9 +6,7 @@ export type NewPost = Database['public']['Tables']['posts']['Insert'];
 export type UpdatePost = Database['public']['Tables']['posts']['Update'];
 
 export class PostsService {
-  constructor(
-    private supabase: ReturnType<typeof createBrowserClient<Database>>
-  ) {}
+  constructor(private supabase: SupabaseClient<Database>) {}
 
   /**
    * Create a new post for a user (will replace any existing active post)
@@ -63,15 +61,15 @@ export class PostsService {
       .select(
         `
         *,
-        users!inner(
+        profiles!inner(
           id,
-          email,
-          name,
+          username,
+          full_name,
           avatar_url
         )
       `
       )
-      .is('previous_post_archived_at', null)
+      .eq('status', 'published')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -87,10 +85,10 @@ export class PostsService {
       .select(
         `
         *,
-        users!inner(
+        profiles!inner(
           id,
-          email,
-          name,
+          username,
+          full_name,
           avatar_url
         )
       `
