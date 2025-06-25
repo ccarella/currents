@@ -4,7 +4,7 @@ import { NextRequest } from 'next/server';
 
 // Mock dependencies
 vi.mock('@/lib/supabase/server', () => ({
-  createServerClient: vi.fn(),
+  createClient: vi.fn(),
 }));
 
 vi.mock('@/lib/supabase/auth', () => ({
@@ -29,7 +29,7 @@ interface MockSupabase {
 
 describe('GET /api/posts', () => {
   let mockSupabase: MockSupabase;
-  let mockCreateServerClient: ReturnType<typeof vi.fn>;
+  let mockCreateClient: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
     mockSupabase = {
@@ -41,8 +41,8 @@ describe('GET /api/posts', () => {
     };
 
     const serverModule = await import('@/lib/supabase/server');
-    mockCreateServerClient = vi.mocked(serverModule.createServerClient);
-    mockCreateServerClient.mockResolvedValue(mockSupabase);
+    mockCreateClient = vi.mocked(serverModule.createClient);
+    mockCreateClient.mockResolvedValue(mockSupabase);
   });
 
   afterEach(() => {
@@ -155,7 +155,7 @@ describe('POST /api/posts', () => {
   let mockPostsService: MockPostsService;
   let mockUser: MockUser;
   let mockRequireAuth: ReturnType<typeof vi.fn>;
-  let mockCreateServerClient: ReturnType<typeof vi.fn>;
+  let mockCreateClient: ReturnType<typeof vi.fn>;
   let MockPostsService: ReturnType<typeof vi.fn>;
 
   beforeEach(async () => {
@@ -171,8 +171,8 @@ describe('POST /api/posts', () => {
     mockRequireAuth.mockResolvedValue(mockUser);
 
     const serverModule = await import('@/lib/supabase/server');
-    mockCreateServerClient = vi.mocked(serverModule.createServerClient);
-    mockCreateServerClient.mockResolvedValue(mockSupabase);
+    mockCreateClient = vi.mocked(serverModule.createClient);
+    mockCreateClient.mockResolvedValue(mockSupabase);
 
     const postsModule = await import('@/lib/posts');
     MockPostsService = vi.mocked(postsModule.PostsService);

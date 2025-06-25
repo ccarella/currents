@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/server';
 import { PostsService } from '@/lib/posts';
 import { requireAuth } from '@/lib/supabase/auth';
 import { createPostSchema, paginationSchema } from '@/lib/validation/posts';
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     const { page, limit } = validationResult.data;
     const offset = (page - 1) * limit;
 
-    const supabase = await createServerClient();
+    const supabase = await createClient();
 
     // Get posts with profile information
     const {
@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
 
     const { title, content, excerpt, status } = validationResult.data;
 
-    const supabase = await createServerClient();
+    const supabase = await createClient();
     const postsService = new PostsService(supabase);
 
     // Generate slug from title
