@@ -12,11 +12,11 @@ DROP POLICY IF EXISTS "Authors can update own posts" ON posts;
 DROP POLICY IF EXISTS "Authors can delete own posts" ON posts;
 
 -- Create new policies for profiles table
--- Policy: Authenticated users can read all user profiles
-CREATE POLICY "Authenticated users can read all profiles" 
+-- Policy: Public can read all profiles (for discoverability)
+CREATE POLICY "Public can read all profiles" 
   ON profiles 
   FOR SELECT 
-  USING (auth.role() = 'authenticated');
+  USING (true);
 
 -- Policy: Users can update only their own profile
 CREATE POLICY "Users can update only own profile" 

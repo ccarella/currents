@@ -5,28 +5,34 @@ import { SupabaseClient } from '@supabase/supabase-js';
 type Database = {
   public: {
     Tables: {
-      users: {
+      profiles: {
         Row: {
           id: string;
-          email: string;
           username: string;
+          full_name: string;
+          bio: string;
+          avatar_url: string;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
-          email: string;
-          username: string;
+          username?: string;
+          full_name?: string;
+          bio?: string;
+          avatar_url?: string;
         };
         Update: {
-          email?: string;
           username?: string;
+          full_name?: string;
+          bio?: string;
+          avatar_url?: string;
         };
       };
       posts: {
         Row: {
           id: string;
-          user_id: string;
+          author_id: string;
           title: string;
           content: string;
           slug: string;
@@ -34,7 +40,7 @@ type Database = {
           previous_post_archived_at: string | null;
         };
         Insert: {
-          user_id: string;
+          author_id: string;
           title: string;
           content: string;
           slug?: string;
@@ -56,14 +62,18 @@ describe('Row Level Security (RLS) Policies', () => {
 
   const mockUser1 = {
     id: 'user-1-id',
-    email: 'user1@example.com',
     username: 'user1',
+    full_name: 'User One',
+    bio: 'Bio for user 1',
+    avatar_url: 'https://example.com/avatar1.jpg',
   };
 
   const mockUser2 = {
     id: 'user-2-id',
-    email: 'user2@example.com',
     username: 'user2',
+    full_name: 'User Two',
+    bio: 'Bio for user 2',
+    avatar_url: 'https://example.com/avatar2.jpg',
   };
 
   beforeEach(() => {
@@ -87,22 +97,16 @@ describe('Row Level Security (RLS) Policies', () => {
           eq: vi.fn().mockReturnThis(),
           single: vi.fn().mockImplementation(() => {
             // Implement RLS logic in mocks
-            if (table === 'users') {
-              if (role === 'authenticated') {
-                return Promise.resolve({ data: mockUser1, error: null });
-              }
-              return Promise.resolve({
-                data: null,
-                error: { message: 'Access denied' },
-              });
+            if (table === 'profiles') {
+              // Public read access for profiles
+              return Promise.resolve({ data: mockUser1, error: null });
             }
             if (table === 'posts') {
-              if (role === 'anon' || role === 'authenticated') {
-                return Promise.resolve({
-                  data: { id: '1', title: 'Test Post' },
-                  error: null,
-                });
-              }
+              // Public read access for posts
+              return Promise.resolve({
+                data: { id: '1', title: 'Test Post' },
+                error: null,
+              });
             }
             return Promise.resolve({ data: null, error: null });
           }),
@@ -122,15 +126,16 @@ describe('Row Level Security (RLS) Policies', () => {
     ) as unknown as SupabaseClient<Database>;
   });
 
-  describe('Users Table RLS Policies', () => {
-    it('should allow authenticated users to read all profiles', async () => {
+  describe('Profiles Table RLS Policies', () => {
+    it('should allow public to read all profiles', async () => {
       const mockResponse = { data: [mockUser1, mockUser2], error: null };
 
-      supabaseUser1.from = vi.fn().mockReturnValue({
+      // Test with anonymous client
+      supabaseAnon.from = vi.fn().mockReturnValue({
         select: vi.fn().mockResolvedValue(mockResponse),
       });
 
-      const { data, error } = await supabaseUser1.from('users').select('*');
+      const { data, error } = await supabaseAnon.from('profiles').select('*');
 
       expect(error).toBeNull();
       expect(data).toHaveLength(2);
@@ -138,17 +143,17 @@ describe('Row Level Security (RLS) Policies', () => {
       expect(data).toContainEqual(mockUser2);
     });
 
-    it('should not allow anonymous users to read profiles', async () => {
-      const mockResponse = { data: null, error: { message: 'Access denied' } };
+    it('should also allow authenticated users to read profiles', async () => {
+      const mockResponse = { data: [mockUser1, mockUser2], error: null };
 
-      supabaseAnon.from = vi.fn().mockReturnValue({
+      supabaseUser1.from = vi.fn().mockReturnValue({
         select: vi.fn().mockResolvedValue(mockResponse),
       });
 
-      const { data, error } = await supabaseAnon.from('users').select('*');
+      const { data, error } = await supabaseUser1.from('profiles').select('*');
 
-      expect(error).toBeTruthy();
-      expect(data).toBeNull();
+      expect(error).toBeNull();
+      expect(data).toHaveLength(2);
     });
 
     it('should allow users to update only their own profile', async () => {
@@ -163,7 +168,7 @@ describe('Row Level Security (RLS) Policies', () => {
       });
 
       const { data, error } = await supabaseUser1
-        .from('users')
+        .from('profiles')
         .update({ username: 'updated' })
         .eq('id', mockUser1.id);
 
@@ -183,7 +188,7 @@ describe('Row Level Security (RLS) Policies', () => {
       });
 
       const { data, error } = await supabaseUser1
-        .from('users')
+        .from('profiles')
         .update({ username: 'hacked' })
         .eq('id', mockUser2.id);
 
@@ -197,13 +202,13 @@ describe('Row Level Security (RLS) Policies', () => {
       const mockPosts = [
         {
           id: '1',
-          user_id: mockUser1.id,
+          author_id: mockUser1.id,
           title: 'Post 1',
           content: 'Content 1',
         },
         {
           id: '2',
-          user_id: mockUser2.id,
+          author_id: mockUser2.id,
           title: 'Post 2',
           content: 'Content 2',
         },
@@ -219,9 +224,9 @@ describe('Row Level Security (RLS) Policies', () => {
       expect(data).toHaveLength(2);
     });
 
-    it('should allow users to create posts with their own user_id', async () => {
+    it('should allow users to create posts with their own author_id', async () => {
       const newPost = {
-        user_id: mockUser1.id,
+        author_id: mockUser1.id,
         title: 'My New Post',
         content: 'Post content',
       };
@@ -241,9 +246,9 @@ describe('Row Level Security (RLS) Policies', () => {
       expect(data).toMatchObject(newPost);
     });
 
-    it('should not allow users to create posts with another user_id', async () => {
+    it('should not allow users to create posts with another author_id', async () => {
       const newPost = {
-        user_id: mockUser2.id,
+        author_id: mockUser2.id,
         title: 'Fake Post',
         content: 'Should fail',
       };
@@ -266,7 +271,7 @@ describe('Row Level Security (RLS) Policies', () => {
     it('should allow users to update only their own posts', async () => {
       const mockPost = {
         id: 'post-1',
-        user_id: mockUser1.id,
+        author_id: mockUser1.id,
         title: 'Original',
       };
       const mockUpdateResponse = {
@@ -347,7 +352,7 @@ describe('Row Level Security (RLS) Policies', () => {
   });
 
   describe('Service Role Access', () => {
-    it('should allow service role full access to users table', async () => {
+    it('should allow service role full access to profiles table', async () => {
       const mockResponse = { data: [mockUser1, mockUser2], error: null };
 
       supabaseAdmin.from = vi.fn().mockReturnValue({
@@ -360,27 +365,27 @@ describe('Row Level Security (RLS) Policies', () => {
 
       // Test read
       const { data: readData, error: readError } = await supabaseAdmin
-        .from('users')
+        .from('profiles')
         .select('*');
       expect(readError).toBeNull();
       expect(readData).toHaveLength(2);
 
       // Test insert
       const { error: insertError } = await supabaseAdmin
-        .from('users')
+        .from('profiles')
         .insert(mockUser1);
       expect(insertError).toBeNull();
 
       // Test update
       const { error: updateError } = await supabaseAdmin
-        .from('users')
+        .from('profiles')
         .update({ username: 'admin-updated' })
         .eq('id', mockUser1.id);
       expect(updateError).toBeNull();
 
       // Test delete
       const { error: deleteError } = await supabaseAdmin
-        .from('users')
+        .from('profiles')
         .delete()
         .eq('id', mockUser1.id);
       expect(deleteError).toBeNull();
@@ -389,7 +394,7 @@ describe('Row Level Security (RLS) Policies', () => {
     it('should allow service role full access to posts table', async () => {
       const mockPost = {
         id: '1',
-        user_id: mockUser1.id,
+        author_id: mockUser1.id,
         title: 'Test',
         content: 'Content',
       };
