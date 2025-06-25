@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Inter, JetBrains_Mono, Spectral } from 'next/font/google';
 import './globals.css';
 import Header from '@/components/layout/Header';
+import { AuthProvider } from '@/lib/AuthContext';
 
 // Optimize font loading with subset and display swap
 const inter = Inter({
@@ -56,8 +57,10 @@ export default function RootLayout({
         />
       </head>
       <body className="font-serif antialiased">
-        <Header />
-        {children}
+        <AuthProvider>
+          <Header />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
