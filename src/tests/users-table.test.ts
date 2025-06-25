@@ -224,6 +224,7 @@ describe('Users Table', () => {
       expect(createError).toBeNull();
       expect(otherUserData?.user).toBeDefined();
 
+      if (!otherUserData.user) throw new Error('Failed to create other user');
       const otherUserId = otherUserData.user.id;
 
       // Verify both users exist
