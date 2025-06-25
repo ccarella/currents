@@ -1,154 +1,334 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import SignUpForm from '../SignUpForm';
 import { createClient } from '@/lib/supabase/client';
 
-vi.mock('@/lib/supabase/client', () => ({
-  createClient: vi.fn(),
+// Mock the dependencies
+vi.mock('@/lib/supabase/client');
+
+const mockPush = vi.fn();
+const mockRefresh = vi.fn();
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: mockPush,
+    refresh: mockRefresh,
+  }),
 }));
 
 describe('SignUpForm', () => {
-  const mockSignUp = vi.fn();
+  const mockSupabaseClient = {
+    auth: {
+      signUp: vi.fn(),
+    },
+    from: vi.fn(() => ({
+      select: vi.fn(() => ({
+        eq: vi.fn(() => ({
+          maybeSingle: vi.fn(),
+        })),
+      })),
+      insert: vi.fn(),
+    })),
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(createClient).mockReturnValue({
-      auth: {
-        signUp: mockSignUp,
-      },
-    } as unknown as ReturnType<typeof createClient>);
+    vi.mocked(createClient).mockReturnValue(
+      mockSupabaseClient as ReturnType<typeof createClient>
+    );
   });
 
-  it('should render sign up form with email and password fields', () => {
+  it('renders all form fields', () => {
     render(<SignUpForm />);
 
-    expect(screen.getByPlaceholderText('Email')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Password')).toBeInTheDocument();
-    expect(screen.getByText('Sign Up')).toBeInTheDocument();
+    expect(screen.getByLabelText(/email/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/username/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole('button', { name: /sign up/i })
+    ).toBeInTheDocument();
   });
 
-  it('should handle successful sign up', async () => {
-    mockSignUp.mockResolvedValue({
-      error: null,
-      data: { user: { id: '123' }, session: null },
+  describe('Form Validation', () => {
+    it('shows email validation error for invalid email', async () => {
+      const user = userEvent.setup();
+      render(<SignUpForm />);
+
+      const emailInput = screen.getByLabelText(/email/i);
+      await user.type(emailInput, 'invalid-email');
+      await user.tab();
+
+      expect(
+        await screen.findByText(/please enter a valid email address/i)
+      ).toBeInTheDocument();
     });
 
-    render(<SignUpForm />);
+    it('shows password validation error for short password', async () => {
+      const user = userEvent.setup();
+      render(<SignUpForm />);
 
-    const emailInput = screen.getByPlaceholderText('Email');
-    const passwordInput = screen.getByPlaceholderText('Password');
-    const submitButton = screen.getByText('Sign Up');
+      const passwordInput = screen.getByLabelText(/password/i);
+      await user.type(passwordInput, 'short');
+      await user.tab();
 
-    fireEvent.change(emailInput, { target: { value: 'newuser@example.com' } });
-    fireEvent.change(passwordInput, { target: { value: 'password123' } });
-    fireEvent.click(submitButton);
-
-    await waitFor(() => {
-      expect(mockSignUp).toHaveBeenCalledWith({
-        email: 'newuser@example.com',
-        password: 'password123',
-      });
       expect(
-        screen.getByText('Please check your email to confirm your sign up.')
+        await screen.findByText(/password must be at least 8 characters/i)
+      ).toBeInTheDocument();
+    });
+
+    it('shows password validation error for missing requirements', async () => {
+      const user = userEvent.setup();
+      render(<SignUpForm />);
+
+      const passwordInput = screen.getByLabelText(/password/i);
+      await user.type(passwordInput, 'onlylowercase');
+      await user.tab();
+
+      expect(
+        await screen.findByText(
+          /password must contain uppercase, lowercase, and number/i
+        )
+      ).toBeInTheDocument();
+    });
+
+    it('shows username validation error for short username', async () => {
+      const user = userEvent.setup();
+      render(<SignUpForm />);
+
+      const usernameInput = screen.getByLabelText(/username/i);
+      await user.type(usernameInput, 'ab');
+      await user.tab();
+
+      expect(
+        await screen.findByText(/username must be at least 3 characters/i)
+      ).toBeInTheDocument();
+    });
+
+    it('shows username validation error for invalid characters', async () => {
+      const user = userEvent.setup();
+      render(<SignUpForm />);
+
+      const usernameInput = screen.getByLabelText(/username/i);
+      await user.type(usernameInput, 'user@name');
+      await user.tab();
+
+      expect(
+        await screen.findByText(
+          /username can only contain letters, numbers, underscores, and hyphens/i
+        )
       ).toBeInTheDocument();
     });
   });
 
-  it('should display error message on sign up failure', async () => {
-    const errorMessage = 'User already registered';
-    mockSignUp.mockResolvedValue({
-      error: { message: errorMessage },
-      data: { user: null, session: null },
+  describe('Username Availability Check', () => {
+    it('shows checking indicator while checking username', async () => {
+      const user = userEvent.setup();
+      render(<SignUpForm />);
+
+      // Mock the username check to be slow
+      mockSupabaseClient.from.mockReturnValue({
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            maybeSingle: vi.fn(
+              () =>
+                new Promise((resolve) =>
+                  setTimeout(() => resolve({ data: null }), 100)
+                )
+            ),
+          })),
+        })),
+      });
+
+      const usernameInput = screen.getByLabelText(/username/i);
+      await user.type(usernameInput, 'testuser');
+
+      // Wait for debounce and check for spinner
+      await waitFor(() => {
+        const spinner = screen.getByRole('status', { hidden: true });
+        expect(spinner).toHaveClass('animate-spin');
+      });
     });
 
-    render(<SignUpForm />);
+    it('shows success indicator for available username', async () => {
+      const user = userEvent.setup();
+      render(<SignUpForm />);
 
-    const emailInput = screen.getByPlaceholderText('Email');
-    const passwordInput = screen.getByPlaceholderText('Password');
-    const submitButton = screen.getByText('Sign Up');
+      // Mock available username
+      mockSupabaseClient.from.mockReturnValue({
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+          })),
+        })),
+      });
 
-    fireEvent.change(emailInput, { target: { value: 'existing@example.com' } });
-    fireEvent.change(passwordInput, { target: { value: 'password123' } });
-    fireEvent.click(submitButton);
+      const usernameInput = screen.getByLabelText(/username/i);
+      await user.type(usernameInput, 'availableuser');
 
-    await waitFor(() => {
-      expect(screen.getByText(errorMessage)).toBeInTheDocument();
-      expect(
-        screen.queryByText('Please check your email to confirm your sign up.')
-      ).not.toBeInTheDocument();
+      await waitFor(
+        () => {
+          // Look for the checkmark SVG
+          const checkmark = document.querySelector(
+            'svg path[d="M5 13l4 4L19 7"]'
+          );
+          expect(checkmark).toBeInTheDocument();
+        },
+        { timeout: 1000 }
+      );
+    });
+
+    it('shows error for unavailable username', async () => {
+      const user = userEvent.setup();
+      render(<SignUpForm />);
+
+      // Mock unavailable username
+      mockSupabaseClient.from.mockReturnValue({
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            maybeSingle: vi
+              .fn()
+              .mockResolvedValue({
+                data: { username: 'takenuser' },
+                error: null,
+              }),
+          })),
+        })),
+      });
+
+      const usernameInput = screen.getByLabelText(/username/i);
+      await user.type(usernameInput, 'takenuser');
+
+      await waitFor(
+        () => {
+          expect(
+            screen.getByText(/username is already taken/i)
+          ).toBeInTheDocument();
+        },
+        { timeout: 1000 }
+      );
     });
   });
 
-  it('should clear messages on new submission', async () => {
-    const errorMessage = 'User already registered';
-    mockSignUp
-      .mockResolvedValueOnce({
-        error: { message: errorMessage },
-        data: { user: null, session: null },
-      })
-      .mockResolvedValueOnce({
+  describe('Form Submission', () => {
+    it('successfully signs up user with valid data', async () => {
+      const user = userEvent.setup();
+
+      // Clear any previous calls
+      mockPush.mockClear();
+      mockRefresh.mockClear();
+
+      render(<SignUpForm />);
+
+      // Mock available username
+      mockSupabaseClient.from.mockReturnValue({
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+          })),
+        })),
+        insert: vi.fn().mockResolvedValue({ error: null }),
+      });
+
+      // Mock successful signup
+      mockSupabaseClient.auth.signUp.mockResolvedValue({
+        data: { user: { id: 'user-123' }, session: null },
         error: null,
-        data: { user: { id: '123' }, session: null },
       });
 
-    render(<SignUpForm />);
+      // Fill form
+      await user.type(screen.getByLabelText(/email/i), 'test@example.com');
+      await user.type(screen.getByLabelText(/username/i), 'testuser');
+      await user.type(screen.getByLabelText(/password/i), 'TestPass123');
 
-    const emailInput = screen.getByPlaceholderText('Email');
-    const passwordInput = screen.getByPlaceholderText('Password');
-    const submitButton = screen.getByText('Sign Up');
+      // Wait for username check
+      await waitFor(() => {
+        expect(mockSupabaseClient.from).toHaveBeenCalled();
+      });
 
-    // First submission with error
-    fireEvent.change(emailInput, { target: { value: 'existing@example.com' } });
-    fireEvent.change(passwordInput, { target: { value: 'password123' } });
-    fireEvent.click(submitButton);
+      // Submit form
+      await user.click(screen.getByRole('button', { name: /sign up/i }));
 
-    await waitFor(() => {
-      expect(screen.getByText(errorMessage)).toBeInTheDocument();
+      await waitFor(() => {
+        expect(mockSupabaseClient.auth.signUp).toHaveBeenCalledWith({
+          email: 'test@example.com',
+          password: 'TestPass123',
+          options: {
+            data: {
+              username: 'testuser',
+            },
+          },
+        });
+      });
+
+      await waitFor(() => {
+        expect(mockPush).toHaveBeenCalledWith('/');
+        expect(mockRefresh).toHaveBeenCalled();
+      });
     });
 
-    // Second submission successful
-    fireEvent.change(emailInput, { target: { value: 'newuser@example.com' } });
-    fireEvent.click(submitButton);
+    it('shows error message on signup failure', async () => {
+      const user = userEvent.setup();
+      render(<SignUpForm />);
 
-    await waitFor(() => {
-      expect(screen.queryByText(errorMessage)).not.toBeInTheDocument();
-      expect(
-        screen.getByText('Please check your email to confirm your sign up.')
-      ).toBeInTheDocument();
+      // Mock available username
+      mockSupabaseClient.from.mockReturnValue({
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+          })),
+        })),
+      });
+
+      // Mock signup failure
+      mockSupabaseClient.auth.signUp.mockResolvedValue({
+        data: { user: null, session: null },
+        error: { message: 'Email already registered' },
+      });
+
+      // Fill form
+      await user.type(screen.getByLabelText(/email/i), 'existing@example.com');
+      await user.type(screen.getByLabelText(/username/i), 'newuser');
+      await user.type(screen.getByLabelText(/password/i), 'ValidPass123');
+
+      // Wait for username check
+      await waitFor(() => {
+        expect(mockSupabaseClient.from).toHaveBeenCalled();
+      });
+
+      // Submit form
+      await user.click(screen.getByRole('button', { name: /sign up/i }));
+
+      await waitFor(() => {
+        expect(
+          screen.getByText(/email already registered/i)
+        ).toBeInTheDocument();
+      });
     });
-  });
 
-  it('should require email and password fields', () => {
-    render(<SignUpForm />);
+    it('disables submit button when username is not available', async () => {
+      const user = userEvent.setup();
+      render(<SignUpForm />);
 
-    const emailInput = screen.getByPlaceholderText('Email');
-    const passwordInput = screen.getByPlaceholderText('Password');
+      // Mock unavailable username
+      mockSupabaseClient.from.mockReturnValue({
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            maybeSingle: vi
+              .fn()
+              .mockResolvedValue({ data: { username: 'taken' }, error: null }),
+          })),
+        })),
+      });
 
-    expect(emailInput).toHaveAttribute('required');
-    expect(passwordInput).toHaveAttribute('required');
-    expect(emailInput).toHaveAttribute('type', 'email');
-    expect(passwordInput).toHaveAttribute('type', 'password');
-  });
+      await user.type(screen.getByLabelText(/email/i), 'test@example.com');
+      await user.type(screen.getByLabelText(/username/i), 'taken');
+      await user.type(screen.getByLabelText(/password/i), 'ValidPass123');
 
-  it('should handle password requirements error', async () => {
-    const errorMessage = 'Password should be at least 6 characters';
-    mockSignUp.mockResolvedValue({
-      error: { message: errorMessage },
-      data: { user: null, session: null },
-    });
-
-    render(<SignUpForm />);
-
-    const emailInput = screen.getByPlaceholderText('Email');
-    const passwordInput = screen.getByPlaceholderText('Password');
-    const submitButton = screen.getByText('Sign Up');
-
-    fireEvent.change(emailInput, { target: { value: 'newuser@example.com' } });
-    fireEvent.change(passwordInput, { target: { value: '123' } });
-    fireEvent.click(submitButton);
-
-    await waitFor(() => {
-      expect(screen.getByText(errorMessage)).toBeInTheDocument();
+      await waitFor(() => {
+        const submitButton = screen.getByRole('button', { name: /sign up/i });
+        expect(submitButton).toBeDisabled();
+      });
     });
   });
 });
