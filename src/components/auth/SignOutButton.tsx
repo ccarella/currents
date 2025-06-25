@@ -36,7 +36,7 @@ export default function SignOutButton() {
       onClick={handleSignOut}
       disabled={isLoading}
       variant="secondary"
-      size="small"
+      size="sm"
     >
       {isLoading ? 'Signing out...' : 'Sign Out'}
     </Button>
