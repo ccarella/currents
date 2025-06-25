@@ -166,6 +166,9 @@ describe('POST /api/posts', () => {
       createPost: vi.fn(),
     };
 
+    // Initialize mockSupabase before using it
+    mockSupabase = {} as MockSupabase;
+
     const authModule = await import('@/lib/supabase/auth');
     mockRequireAuth = vi.mocked(authModule.requireAuth);
     mockRequireAuth.mockResolvedValue(mockUser);

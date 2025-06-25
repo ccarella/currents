@@ -32,8 +32,8 @@ describe('Supabase Client Configuration', () => {
   });
 
   it('should create a client with valid environment variables', async () => {
-    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
+    process.env['NEXT_PUBLIC_SUPABASE_URL'] = 'https://test.supabase.co';
+    process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] = 'test-anon-key';
 
     const { createClient } = await import('../client');
     const client = createClient();
@@ -42,8 +42,8 @@ describe('Supabase Client Configuration', () => {
   });
 
   it('should throw error when SUPABASE_URL is missing', async () => {
-    delete process.env.NEXT_PUBLIC_SUPABASE_URL;
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
+    delete process.env['NEXT_PUBLIC_SUPABASE_URL'];
+    process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] = 'test-anon-key';
 
     const { createClient } = await import('../client');
     expect(() => createClient()).toThrow(
@@ -52,8 +52,8 @@ describe('Supabase Client Configuration', () => {
   });
 
   it('should throw error when SUPABASE_ANON_KEY is missing', async () => {
-    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
-    delete process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    process.env['NEXT_PUBLIC_SUPABASE_URL'] = 'https://test.supabase.co';
+    delete process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'];
 
     const { createClient } = await import('../client');
     expect(() => createClient()).toThrow(
@@ -62,8 +62,8 @@ describe('Supabase Client Configuration', () => {
   });
 
   it('should return the same client instance on subsequent calls (singleton pattern)', async () => {
-    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
+    process.env['NEXT_PUBLIC_SUPABASE_URL'] = 'https://test.supabase.co';
+    process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] = 'test-anon-key';
 
     const { createClient } = await import('../client');
     const client1 = createClient();
@@ -76,8 +76,8 @@ describe('Supabase Client Configuration', () => {
     // Remove window to simulate server environment
     delete (global as { window?: Window }).window;
 
-    process.env.NEXT_PUBLIC_SUPABASE_URL = 'https://test.supabase.co';
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = 'test-anon-key';
+    process.env['NEXT_PUBLIC_SUPABASE_URL'] = 'https://test.supabase.co';
+    process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] = 'test-anon-key';
 
     const { createClient } = await import('../client');
     expect(() => createClient()).toThrow(
