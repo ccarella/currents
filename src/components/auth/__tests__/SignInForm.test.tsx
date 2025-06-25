@@ -3,22 +3,25 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import SignInForm from '../SignInForm';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 // Mock Next.js navigation
 vi.mock('next/navigation', () => ({
   useRouter: vi.fn(),
+  useSearchParams: vi.fn(() => ({
+    get: vi.fn(() => null),
+  })),
 }));
 
-// Mock Supabase client
-vi.mock('@/lib/supabase/client', () => ({
-  createClient: vi.fn(),
+// Mock useAuth hook
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth: vi.fn(),
 }));
 
 describe('SignInForm', () => {
   const mockPush = vi.fn();
   const mockRefresh = vi.fn();
-  const mockSignInWithPassword = vi.fn();
+  const mockSignIn = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -32,11 +35,18 @@ describe('SignInForm', () => {
       prefetch: vi.fn(),
     } as ReturnType<typeof useRouter>);
 
-    vi.mocked(createClient).mockReturnValue({
-      auth: {
-        signInWithPassword: mockSignInWithPassword,
-      },
-    } as unknown as ReturnType<typeof createClient>);
+    vi.mocked(useAuth).mockReturnValue({
+      signIn: mockSignIn,
+      user: null,
+      session: null,
+      loading: false,
+      error: null,
+      isAuthenticated: false,
+      signUp: vi.fn(),
+      signOut: vi.fn(),
+      resetPassword: vi.fn(),
+      updatePassword: vi.fn(),
+    } as ReturnType<typeof useAuth>);
   });
 
   it('renders form fields and labels', () => {
@@ -65,7 +75,7 @@ describe('SignInForm', () => {
       expect(
         screen.getByText('Please enter a valid email address')
       ).toBeInTheDocument();
-      expect(mockSignInWithPassword).not.toHaveBeenCalled(); // Form shouldn't submit with invalid email
+      expect(mockSignIn).not.toHaveBeenCalled(); // Form shouldn't submit with invalid email
     });
   });
 
@@ -85,13 +95,13 @@ describe('SignInForm', () => {
       expect(
         screen.getByText('Password must be at least 6 characters')
       ).toBeInTheDocument();
-      expect(mockSignInWithPassword).not.toHaveBeenCalled(); // Form shouldn't submit with short password
+      expect(mockSignIn).not.toHaveBeenCalled(); // Form shouldn't submit with short password
     });
   });
 
   it('submits form with valid data', async () => {
     const user = userEvent.setup();
-    mockSignInWithPassword.mockResolvedValue({ error: null });
+    mockSignIn.mockResolvedValue(undefined); // signIn doesn't return anything on success
 
     render(<SignInForm />);
 
@@ -104,10 +114,10 @@ describe('SignInForm', () => {
     await user.click(submitButton);
 
     await waitFor(() => {
-      expect(mockSignInWithPassword).toHaveBeenCalledWith({
-        email: 'test@example.com',
-        password: 'password123',
-      });
+      expect(mockSignIn).toHaveBeenCalledWith(
+        'test@example.com',
+        'password123'
+      );
       expect(mockPush).toHaveBeenCalledWith('/');
       expect(mockRefresh).toHaveBeenCalled();
     });
@@ -115,7 +125,7 @@ describe('SignInForm', () => {
 
   it('displays loading state during submission', async () => {
     const user = userEvent.setup();
-    mockSignInWithPassword.mockImplementation(() => new Promise(() => {})); // Never resolves
+    mockSignIn.mockImplementation(() => new Promise(() => {})); // Never resolves
 
     render(<SignInForm />);
 
@@ -138,9 +148,7 @@ describe('SignInForm', () => {
   it('displays error message on failed authentication', async () => {
     const user = userEvent.setup();
     const errorMessage = 'Invalid login credentials';
-    mockSignInWithPassword.mockResolvedValue({
-      error: { message: errorMessage },
-    });
+    mockSignIn.mockRejectedValue(new Error(errorMessage));
 
     render(<SignInForm />);
 
@@ -160,7 +168,7 @@ describe('SignInForm', () => {
 
   it('handles unexpected errors gracefully', async () => {
     const user = userEvent.setup();
-    mockSignInWithPassword.mockRejectedValue(new Error('Network error'));
+    mockSignIn.mockRejectedValue(new Error('Network error'));
 
     render(<SignInForm />);
 
@@ -174,9 +182,7 @@ describe('SignInForm', () => {
 
     await waitFor(() => {
       expect(screen.getByRole('alert')).toBeInTheDocument();
-      expect(
-        screen.getByText('An unexpected error occurred. Please try again.')
-      ).toBeInTheDocument();
+      expect(screen.getByText('Network error')).toBeInTheDocument();
     });
   });
 
