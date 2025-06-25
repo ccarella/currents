@@ -1,7 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { getAuthenticatedUser, requireAuth } from '../auth';
+import {
+  getAuthenticatedUser,
+  requireAuth,
+  resetPasswordForEmail,
+} from '../auth';
 import { createClient } from '../server';
 
 vi.mock('next/headers', () => ({
@@ -25,6 +29,8 @@ describe('Auth utilities', () => {
       signOut: vi.fn(),
       onAuthStateChange: vi.fn(),
       getSession: vi.fn(),
+      resetPasswordForEmail: vi.fn(),
+      updateUser: vi.fn(),
     },
   };
 
@@ -233,6 +239,89 @@ describe('Auth utilities', () => {
           password: 'password123',
         })
       ).rejects.toThrow('Network timeout');
+    });
+  });
+
+  describe('resetPasswordForEmail', () => {
+    beforeEach(() => {
+      process.env['NEXT_PUBLIC_SITE_URL'] = 'http://localhost:3000';
+    });
+
+    it('should send password reset email successfully', async () => {
+      mockSupabase.auth.resetPasswordForEmail.mockResolvedValue({
+        data: {},
+        error: null,
+      });
+
+      const { data, error } = await resetPasswordForEmail('test@example.com');
+
+      expect(error).toBeNull();
+      expect(data).toBeDefined();
+      expect(mockSupabase.auth.resetPasswordForEmail).toHaveBeenCalledWith(
+        'test@example.com',
+        {
+          redirectTo: 'http://localhost:3000/auth/reset-password',
+        }
+      );
+    });
+
+    it('should handle rate limit error', async () => {
+      const mockError = {
+        message: 'Rate limit exceeded',
+        name: 'AuthError',
+        status: 429,
+      };
+      mockSupabase.auth.resetPasswordForEmail.mockResolvedValue({
+        data: null,
+        error: mockError,
+      });
+
+      const { error } = await resetPasswordForEmail('test@example.com');
+
+      expect(error).toEqual(mockError);
+    });
+
+    it('should handle invalid email error', async () => {
+      const mockError = {
+        message: 'Invalid email',
+        name: 'AuthError',
+        status: 400,
+      };
+      mockSupabase.auth.resetPasswordForEmail.mockResolvedValue({
+        data: null,
+        error: mockError,
+      });
+
+      const { error } = await resetPasswordForEmail('invalid-email');
+
+      expect(error).toEqual(mockError);
+    });
+
+    it('should handle network errors', async () => {
+      mockSupabase.auth.resetPasswordForEmail.mockRejectedValue(
+        new Error('Network error')
+      );
+
+      await expect(resetPasswordForEmail('test@example.com')).rejects.toThrow(
+        'Network error'
+      );
+    });
+
+    it('should use correct redirect URL', async () => {
+      process.env['NEXT_PUBLIC_SITE_URL'] = 'https://example.com';
+      mockSupabase.auth.resetPasswordForEmail.mockResolvedValue({
+        data: {},
+        error: null,
+      });
+
+      await resetPasswordForEmail('test@example.com');
+
+      expect(mockSupabase.auth.resetPasswordForEmail).toHaveBeenCalledWith(
+        'test@example.com',
+        {
+          redirectTo: 'https://example.com/auth/reset-password',
+        }
+      );
     });
   });
 });
