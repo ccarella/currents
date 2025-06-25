@@ -37,17 +37,9 @@ export default function SignInForm() {
     setIsLoading(true);
 
     try {
-      const { error } = await signIn(data.email, data.password);
-
-      if (error) {
-        setError('root', {
-          type: 'manual',
-          message: error.message,
-        });
-      } else {
-        router.push(redirect);
-        router.refresh();
-      }
+      await signIn(data.email, data.password);
+      router.push(redirect);
+      router.refresh();
     } catch (error) {
       setError('root', {
         type: 'manual',
