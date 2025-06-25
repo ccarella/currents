@@ -78,10 +78,22 @@ BEGIN
   IF NEW.slug IS NULL OR NEW.slug = '' THEN
     NEW.slug = generate_slug(NEW.title);
     
-    -- Ensure slug uniqueness by appending timestamp if needed
-    WHILE EXISTS (SELECT 1 FROM public.posts WHERE slug = NEW.slug AND id != NEW.id) LOOP
-      NEW.slug = NEW.slug || '-' || EXTRACT(EPOCH FROM now())::INTEGER;
-    END LOOP;
+    -- Ensure slug uniqueness by appending UUID suffix if needed
+    -- Maximum 5 attempts to avoid infinite loops
+    DECLARE
+      attempt_count INTEGER := 0;
+      base_slug TEXT := NEW.slug;
+    BEGIN
+      WHILE EXISTS (SELECT 1 FROM public.posts WHERE slug = NEW.slug AND id != NEW.id) AND attempt_count < 5 LOOP
+        NEW.slug = base_slug || '-' || SUBSTR(gen_random_uuid()::TEXT, 1, 8);
+        attempt_count := attempt_count + 1;
+      END LOOP;
+      
+      -- If still not unique after 5 attempts, append full UUID
+      IF EXISTS (SELECT 1 FROM public.posts WHERE slug = NEW.slug AND id != NEW.id) THEN
+        NEW.slug = base_slug || '-' || gen_random_uuid()::TEXT;
+      END IF;
+    END;
   END IF;
   
   RETURN NEW;

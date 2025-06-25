@@ -244,9 +244,9 @@ describe('Posts Table', () => {
         .select()
         .single();
 
-      // Should append timestamp to make it unique
+      // Should append UUID suffix to make it unique
       expect(error).toBeNull();
-      expect(post2?.slug).toMatch(/^duplicate-title-\d+$/);
+      expect(post2?.slug).toMatch(/^duplicate-title-[a-f0-9]{8}$/);
 
       // Clean up second user
       await supabase.auth.admin.deleteUser(testUserId2);

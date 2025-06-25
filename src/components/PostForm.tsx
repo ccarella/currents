@@ -1,11 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/database';
-import { PostsService } from '@/lib/posts';
+import { usePostsService } from '@/lib/posts-context';
 
 export function PostForm({ userId }: { userId: string }) {
+  const postsService = usePostsService();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -19,17 +18,6 @@ export function PostForm({ userId }: { userId: string }) {
     setSuccess(false);
 
     try {
-      const supabaseUrl = process.env['NEXT_PUBLIC_SUPABASE_URL'];
-      const supabaseKey = process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'];
-
-      if (!supabaseUrl || !supabaseKey) {
-        throw new Error('Missing Supabase configuration');
-      }
-
-      const supabase = createClient<Database>(supabaseUrl, supabaseKey);
-
-      const postsService = new PostsService(supabase);
-
       await postsService.createPost({
         user_id: userId,
         title,
