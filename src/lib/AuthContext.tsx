@@ -29,9 +29,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     error: null,
   });
 
-  const supabase = createClient();
-
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+
+    const supabase = createClient();
+
     // Get initial session
     const initializeAuth = async () => {
       try {
@@ -62,7 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Listen for auth state changes
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
+    } = supabase.auth.onAuthStateChange(async (_event, session) => {
       setAuthState((prevState) => ({
         ...prevState,
         user: session?.user ?? null,
@@ -75,11 +78,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       subscription.unsubscribe();
     };
-  }, [supabase.auth]);
+  }, []);
 
   const signIn = async (email: string, password: string) => {
     try {
       setAuthState((prev) => ({ ...prev, loading: true, error: null }));
+      const supabase = createClient();
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -98,6 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signUp = async (email: string, password: string) => {
     try {
       setAuthState((prev) => ({ ...prev, loading: true, error: null }));
+      const supabase = createClient();
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -116,6 +121,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       setAuthState((prev) => ({ ...prev, loading: true, error: null }));
+      const supabase = createClient();
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
     } catch (error) {
@@ -131,6 +137,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const resetPassword = async (email: string) => {
     try {
       setAuthState((prev) => ({ ...prev, loading: true, error: null }));
+      const supabase = createClient();
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth/reset-password`,
       });
@@ -148,6 +155,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const updatePassword = async (newPassword: string) => {
     try {
       setAuthState((prev) => ({ ...prev, loading: true, error: null }));
+      const supabase = createClient();
       const { error } = await supabase.auth.updateUser({
         password: newPassword,
       });
