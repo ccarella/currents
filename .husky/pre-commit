@@ -1,1 +1,6 @@
+#!/bin/bash
+# Check and regenerate database types if needed
+./scripts/check-db-types.sh
+
+# Run lint-staged
 npx lint-staged

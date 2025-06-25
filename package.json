@@ -4,7 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build",
+    "prebuild": "npm run db:types",
+    "build": "npm run type-check && next build",
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
