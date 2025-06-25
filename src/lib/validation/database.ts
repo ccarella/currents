@@ -100,15 +100,17 @@ export class ValidatedQueryBuilder<
     const validatedData = validators.update(data);
     // Use any to avoid complex type inference issues
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return this.supabase.from(this.table).update(validatedData as any).eq('id', id);
+    return this.supabase.from(this.table).update(validatedData as any).eq('id' as any, id);
   }
 
   async delete(id: string) {
-    return this.supabase.from(this.table).delete().eq('id', id);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return this.supabase.from(this.table).delete().eq('id' as any, id);
   }
 
   async findById(id: string) {
-    return this.supabase.from(this.table).select('*').eq('id', id).single();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return this.supabase.from(this.table).select('*').eq('id' as any, id).single();
   }
 
   async findMany(params?: unknown) {
@@ -160,7 +162,8 @@ export async function validateExists<
   const { data, error } = await supabase
     .from(table)
     .select('id')
-    .eq('id', id)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    .eq('id' as any, id)
     .single();
 
   return !error && !!data;
@@ -182,7 +185,8 @@ export async function validateUnique<
   let query = supabase.from(table).select('id').eq(field as any, value);
 
   if (excludeId) {
-    query = query.neq('id', excludeId);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    query = query.neq('id' as any, excludeId);
   }
 
   const { data, error } = await query;
@@ -199,7 +203,8 @@ export async function validateManyExist<
   table: T,
   ids: string[]
 ): Promise<{ valid: string[]; invalid: string[] }> {
-  const { data, error } = await supabase.from(table).select('id').in('id', ids);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await supabase.from(table).select('id').in('id' as any, ids);
 
   if (error || !data) {
     return { valid: [], invalid: ids };
