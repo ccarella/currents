@@ -26,13 +26,26 @@ export async function ensureUserProfile() {
   // Profile doesn't exist, create it
   // Get user metadata for the profile
   const { email, user_metadata } = user.user;
-  const username = user_metadata?.username || email?.split('@')[0] || 'user';
+  let username = user_metadata?.['username'] || email?.split('@')[0] || 'user';
+
+  // Check if username already exists
+  const { data: existingUsername } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('username', username)
+    .single();
+
+  // Only append timestamp if username is taken
+  if (existingUsername) {
+    username = `${username}_${Date.now()}`;
+  }
 
   const profileData: ProfileInsert = {
     id: user.user.id,
-    username: `${username}_${Date.now()}`, // Ensure uniqueness
+    username,
     email: email || '',
-    full_name: user_metadata?.full_name || user_metadata?.name || username,
+    full_name:
+      user_metadata?.['full_name'] || user_metadata?.['name'] || username,
   };
 
   const { data: newProfile, error: insertError } = await supabase
