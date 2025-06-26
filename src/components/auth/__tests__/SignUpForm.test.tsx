@@ -28,7 +28,6 @@ describe('SignUpForm', () => {
           maybeSingle: vi.fn(),
         })),
       })),
-      insert: vi.fn(),
     })),
   };
 
@@ -186,12 +185,10 @@ describe('SignUpForm', () => {
       mockSupabaseClient.from.mockReturnValue({
         select: vi.fn(() => ({
           eq: vi.fn(() => ({
-            maybeSingle: vi
-              .fn()
-              .mockResolvedValue({
-                data: { username: 'takenuser' },
-                error: null,
-              }),
+            maybeSingle: vi.fn().mockResolvedValue({
+              data: { username: 'takenuser' },
+              error: null,
+            }),
           })),
         })),
       });
@@ -227,7 +224,6 @@ describe('SignUpForm', () => {
             maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
           })),
         })),
-        insert: vi.fn().mockResolvedValue({ error: null }),
       });
 
       // Mock successful signup
