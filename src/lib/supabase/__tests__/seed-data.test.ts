@@ -19,16 +19,8 @@ const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey, {
 });
 
 describe('Seed Data Integration', () => {
-  describe('User and Profile Consistency', () => {
-    it('should have matching users and profiles', async () => {
-      const { data: users, error: usersError } = await supabase
-        .from('users')
-        .select('*')
-        .order('created_at');
-
-      expect(usersError).toBeNull();
-      expect(users).toBeDefined();
-
+  describe('Profile Data Consistency', () => {
+    it('should have profiles with required fields', async () => {
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
@@ -36,36 +28,28 @@ describe('Seed Data Integration', () => {
 
       expect(profilesError).toBeNull();
       expect(profiles).toBeDefined();
+      expect(profiles?.length).toBeGreaterThan(0);
 
-      // Every user should have a corresponding profile
-      const userIds = users?.map((u) => u.id) || [];
-      const profileIds = profiles?.map((p) => p.id) || [];
-
-      userIds.forEach((userId) => {
-        expect(profileIds).toContain(userId);
+      // Every profile should have required fields
+      profiles?.forEach((profile) => {
+        expect(profile.id).toBeDefined();
+        expect(profile.username).toBeDefined();
+        expect(profile.email).toBeDefined();
       });
     });
 
-    it('should have consistent usernames between users and profiles', async () => {
-      // Since there's no direct foreign key, we need to join by id
-      const { data: users, error: usersError } = await supabase
-        .from('users')
-        .select('id, username');
-
-      expect(usersError).toBeNull();
-
+    it('should have unique usernames in profiles', async () => {
       const { data: profiles, error: profilesError } = await supabase
         .from('profiles')
-        .select('id, username');
+        .select('username');
 
       expect(profilesError).toBeNull();
+      expect(profiles).toBeDefined();
 
-      // Check that usernames match for the same id
-      users?.forEach((user) => {
-        const profile = profiles?.find((p) => p.id === user.id);
-        expect(profile).toBeDefined();
-        expect(user.username).toBe(profile?.username);
-      });
+      // Check that all usernames are unique
+      const usernames = profiles?.map((p) => p.username) || [];
+      const uniqueUsernames = [...new Set(usernames)];
+      expect(usernames.length).toBe(uniqueUsernames.length);
     });
   });
 
@@ -187,7 +171,7 @@ describe('Seed Data Integration', () => {
 
     it('should have valid timestamps on all records', async () => {
       // Test tables that have both created_at and updated_at
-      const tablesWithBothTimestamps = ['users', 'profiles', 'posts'];
+      const tablesWithBothTimestamps = ['profiles', 'posts'];
 
       for (const table of tablesWithBothTimestamps) {
         const { data, error } = await supabase
