@@ -31,11 +31,16 @@ vi.mock('@/components/MarkdownEditor', () => ({
 
 // Mock next/navigation
 const mockPush = vi.fn();
+const mockReplace = vi.fn();
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
     push: mockPush,
+    replace: mockReplace,
   }),
   usePathname: () => '/write',
+  useSearchParams: () => ({
+    get: vi.fn(() => null),
+  }),
 }));
 
 // Mock the useRequireAuth hook
@@ -44,6 +49,17 @@ vi.mock('@/hooks/useRequireAuth', () => ({
     user: { id: '123', email: 'test@example.com' },
     isAuthenticated: true,
     loading: false,
+  }),
+}));
+
+// Mock Supabase posts functions
+vi.mock('@/lib/supabase/posts', () => ({
+  createPost: vi.fn().mockResolvedValue({ id: 'new-post-id' }),
+  updatePost: vi.fn().mockResolvedValue({}),
+  getPostById: vi.fn().mockResolvedValue({
+    id: 'post-id',
+    title: 'Test Post',
+    content: 'Test content',
   }),
 }));
 

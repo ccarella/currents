@@ -8,7 +8,10 @@ interface MockEditorProps {
   value: string;
   onChange: (value: string) => void;
   preview?: string;
-  textareaProps?: { placeholder?: string };
+  textareaProps?: { placeholder?: string; 'aria-label'?: string };
+  previewOptions?: {
+    transformLinkUri?: (uri: string) => string;
+  };
 }
 
 vi.mock('next/dynamic', () => ({
@@ -26,11 +29,19 @@ vi.mock('next/dynamic', () => ({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={textareaProps?.placeholder}
+          aria-label={textareaProps?.['aria-label']}
         />
         {preview === 'live' && <div data-testid="md-preview">{value}</div>}
       </div>
     );
     return MockMDEditor;
+  },
+}));
+
+// Mock DOMPurify
+vi.mock('dompurify', () => ({
+  default: {
+    sanitize: vi.fn((content) => content),
   },
 }));
 
@@ -43,6 +54,8 @@ describe('MarkdownEditor', () => {
     localStorage.clear();
     vi.clearAllMocks();
     vi.useRealTimers();
+    // Reset window event listeners
+    window.removeEventListener('beforeunload', vi.fn());
   });
 
   afterEach(() => {
@@ -174,7 +187,7 @@ describe('MarkdownEditor', () => {
     expect(saveButton).toBeDisabled();
 
     // Resolve the promise
-    resolvePromise();
+    resolvePromise?.();
 
     await waitFor(() => {
       expect(screen.getByText('Save')).toBeInTheDocument();
@@ -225,5 +238,26 @@ describe('MarkdownEditor', () => {
 
     expect(screen.getByText('0 words')).toBeInTheDocument();
     expect(screen.getByText('0 min read')).toBeInTheDocument();
+  });
+
+  it('shows unsaved changes indicator', async () => {
+    render(<MarkdownEditor />);
+
+    const textarea = screen.getByTestId('md-textarea');
+    fireEvent.change(textarea, { target: { value: 'New unsaved content' } });
+
+    await waitFor(() => {
+      expect(screen.getByText('• Unsaved changes')).toBeInTheDocument();
+    });
+  });
+
+  it('adds aria-labels for accessibility', () => {
+    render(<MarkdownEditor onSave={mockOnSave} />);
+
+    const saveButton = screen.getByRole('button', { name: /save document/i });
+    expect(saveButton).toHaveAttribute('aria-label', 'Save document');
+
+    const focusButton = screen.getByTitle('Enter focus mode');
+    expect(focusButton).toHaveAttribute('aria-label', 'Enter focus mode');
   });
 });

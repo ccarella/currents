@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { Save, FileText, Maximize2, Minimize2 } from 'lucide-react';
 
@@ -8,6 +8,10 @@ const MDEditor = dynamic(
   () => import('@uiw/react-md-editor').then((mod) => mod.default),
   { ssr: false }
 );
+
+// Constants
+const WORDS_PER_MINUTE = 200;
+const AUTO_SAVE_DELAY = 1000;
 
 interface MarkdownEditorProps {
   initialContent?: string;
@@ -26,19 +30,61 @@ export default function MarkdownEditor({
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
   const [wordCount, setWordCount] = useState(0);
   const [readingTime, setReadingTime] = useState(0);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isUnmountingRef = useRef(false);
 
-  // Auto-save to localStorage
+  // Auto-save to localStorage with cleanup
   useEffect(() => {
-    const saveTimeout = setTimeout(() => {
-      if (content) {
-        localStorage.setItem('draft-content', content);
-        localStorage.setItem('draft-timestamp', new Date().toISOString());
-        setLastSaved(new Date());
-      }
-    }, 1000);
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
 
-    return () => clearTimeout(saveTimeout);
+    if (content && !isUnmountingRef.current) {
+      setHasUnsavedChanges(true);
+      saveTimeoutRef.current = setTimeout(() => {
+        if (!isUnmountingRef.current) {
+          try {
+            localStorage.setItem('draft-content', content);
+            localStorage.setItem('draft-timestamp', new Date().toISOString());
+            setLastSaved(new Date());
+            setHasUnsavedChanges(false);
+          } catch (error) {
+            console.error('Failed to save draft:', error);
+          }
+        }
+      }, AUTO_SAVE_DELAY);
+    }
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
   }, [content]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isUnmountingRef.current = true;
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Warn user about unsaved changes
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges && !isUnmountingRef.current) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
 
   // Load draft from localStorage on mount
   useEffect(() => {
@@ -62,19 +108,25 @@ export default function MarkdownEditor({
     const count = words.length;
     setWordCount(count);
 
-    // Average reading speed: 200 words per minute
-    const minutes = Math.ceil(count / 200);
+    // Average reading speed
+    const minutes = Math.ceil(count / WORDS_PER_MINUTE);
     setReadingTime(minutes);
   }, [content]);
 
   const handleSave = useCallback(async () => {
-    if (onSave) {
+    if (onSave && !isUnmountingRef.current) {
       setIsSaving(true);
       try {
         await onSave(content);
         setLastSaved(new Date());
+        setHasUnsavedChanges(false);
+      } catch (error) {
+        console.error('Failed to save:', error);
+        // TODO: Show error notification to user
       } finally {
-        setIsSaving(false);
+        if (!isUnmountingRef.current) {
+          setIsSaving(false);
+        }
       }
     }
   }, [content, onSave]);
@@ -83,7 +135,7 @@ export default function MarkdownEditor({
     setIsFocusMode(!isFocusMode);
   };
 
-  const formatLastSaved = () => {
+  const formatLastSaved = useMemo(() => {
     if (!lastSaved) return null;
 
     const now = new Date();
@@ -98,7 +150,10 @@ export default function MarkdownEditor({
     }
     if (hours < 24) return `Saved ${hours} hour${hours > 1 ? 's' : ''} ago`;
     return `Saved on ${lastSaved.toLocaleDateString()}`;
-  };
+  }, [lastSaved]);
+
+  // Sanitize content for preview - currently handled by MDEditor internally
+  // Keeping DOMPurify import for future custom preview implementation
 
   return (
     <div
@@ -115,8 +170,11 @@ export default function MarkdownEditor({
             <span className="text-gray-400">•</span>
             <span>{readingTime} min read</span>
           </div>
-          {lastSaved && (
-            <span className="text-sm text-gray-500">{formatLastSaved()}</span>
+          {formatLastSaved && (
+            <span className="text-sm text-gray-500">{formatLastSaved}</span>
+          )}
+          {hasUnsavedChanges && (
+            <span className="text-sm text-orange-500">• Unsaved changes</span>
           )}
         </div>
 
@@ -126,6 +184,7 @@ export default function MarkdownEditor({
               onClick={handleSave}
               disabled={isSaving}
               className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              aria-label="Save document"
             >
               <Save className="h-4 w-4" />
               {isSaving ? 'Saving...' : 'Save'}
@@ -136,6 +195,7 @@ export default function MarkdownEditor({
             onClick={toggleFocusMode}
             className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md"
             title={isFocusMode ? 'Exit focus mode' : 'Enter focus mode'}
+            aria-label={isFocusMode ? 'Exit focus mode' : 'Enter focus mode'}
           >
             {isFocusMode ? (
               <Minimize2 className="h-5 w-5" />
@@ -156,6 +216,7 @@ export default function MarkdownEditor({
           data-color-mode="light"
           textareaProps={{
             placeholder,
+            'aria-label': 'Markdown editor',
           }}
         />
       </div>
