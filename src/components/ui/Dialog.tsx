@@ -34,6 +34,7 @@ export function Dialog({
         document.body.style.overflow = '';
       };
     }
+    return undefined;
   }, [open, onClose]);
 
   if (!open) return null;
