@@ -62,18 +62,31 @@
   --ring: #0ea5e9;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* Dark theme */
-    --background: #0a0a0a;
-    --foreground: #ededed;
-    --muted: #1f2937;
-    --muted-foreground: #9ca3af;
-    --accent: #374151;
-    --accent-foreground: #f9fafb;
-    --border: #374151;
-    --ring: #38bdf8;
-  }
+/* Dark mode removed - app always uses light mode */
+
+/* Ensure light mode is always active */
+html,
+html.light {
+  --background: #ffffff !important;
+  --foreground: #111827 !important;
+  --muted: #f9fafb !important;
+  --muted-foreground: #6b7280 !important;
+  --accent: #f3f4f6 !important;
+  --accent-foreground: #111827 !important;
+  --border: #e5e7eb !important;
+  --ring: #0ea5e9 !important;
+}
+
+/* Prevent dark mode from ever being applied */
+html.dark {
+  --background: #ffffff !important;
+  --foreground: #111827 !important;
+  --muted: #f9fafb !important;
+  --muted-foreground: #6b7280 !important;
+  --accent: #f3f4f6 !important;
+  --accent-foreground: #111827 !important;
+  --border: #e5e7eb !important;
+  --ring: #0ea5e9 !important;
 }
 
 /* Base styles */
