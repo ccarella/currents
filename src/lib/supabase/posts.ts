@@ -1,4 +1,5 @@
 import { createClient } from './client';
+import { ensureUserProfile } from './profiles';
 import type { Database } from '@/types/database.generated';
 
 type PostInsert = Database['public']['Tables']['posts']['Insert'];
@@ -16,6 +17,9 @@ export async function createPost(data: {
   if (!user.user) {
     throw new Error('User not authenticated');
   }
+
+  // Ensure user has a profile
+  await ensureUserProfile();
 
   // Validate input
   if (!data.title || data.title.trim().length === 0) {
