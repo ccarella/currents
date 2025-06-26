@@ -14,11 +14,11 @@ const supabase = createClient<Database>(supabaseUrl, supabaseServiceKey, {
   },
 });
 
-describe('Users Table', () => {
+describe('Profiles Table', () => {
   // Test user data
   const testUser = {
     email: 'test@example.com',
-    password: 'testpassword123',
+    password: 'Test123!@#',
     username: 'testuser',
   };
 
@@ -26,7 +26,7 @@ describe('Users Table', () => {
 
   beforeAll(async () => {
     // Clean up any existing test data
-    await supabase.from('users').delete().eq('email', testUser.email);
+    await supabase.from('profiles').delete().eq('email', testUser.email);
   });
 
   afterAll(async () => {
@@ -37,16 +37,19 @@ describe('Users Table', () => {
   });
 
   describe('Table Creation and Schema', () => {
-    it('should have users table with correct columns', async () => {
-      const { data, error } = await supabase.from('users').select('*').limit(0);
+    it('should have profiles table with correct columns', async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .limit(0);
 
       expect(error).toBeNull();
       expect(data).toBeDefined();
     });
   });
 
-  describe('User Creation and Constraints', () => {
-    it('should create a user record when auth user is created', async () => {
+  describe('Profile Creation and Constraints', () => {
+    it('should create a profile record when auth user is created', async () => {
       // Create auth user
       const { data: authData, error: authError } =
         await supabase.auth.admin.createUser({
@@ -62,24 +65,24 @@ describe('Users Table', () => {
       }
       userId = authData.user.id;
 
-      // Check if user record was created
-      const { data: userData, error: userError } = await supabase
-        .from('users')
+      // Check if profile record was created
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
         .select('*')
         .eq('id', userId)
         .single();
 
-      expect(userError).toBeNull();
-      expect(userData).toBeDefined();
-      expect(userData?.email).toBe(testUser.email);
-      expect(userData?.username).toBe(testUser.username);
-      expect(userData?.created_at).toBeDefined();
-      expect(userData?.updated_at).toBeDefined();
+      expect(profileError).toBeNull();
+      expect(profileData).toBeDefined();
+      expect(profileData?.email).toBe(testUser.email);
+      expect(profileData?.username).toBe(testUser.username);
+      expect(profileData?.created_at).toBeDefined();
+      expect(profileData?.updated_at).toBeDefined();
     });
 
     it('should enforce unique email constraint', async () => {
       // Try to insert duplicate email directly
-      const { error } = await supabase.from('users').insert({
+      const { error } = await supabase.from('profiles').insert({
         id: crypto.randomUUID(),
         email: testUser.email,
         username: 'anotheruser',
@@ -91,7 +94,7 @@ describe('Users Table', () => {
 
     it('should enforce unique username constraint', async () => {
       // Try to insert duplicate username directly
-      const { error } = await supabase.from('users').insert({
+      const { error } = await supabase.from('profiles').insert({
         id: crypto.randomUUID(),
         email: 'another@example.com',
         username: testUser.username,
@@ -100,13 +103,46 @@ describe('Users Table', () => {
       expect(error).toBeDefined();
       expect(error?.code).toBe('23505'); // Unique violation
     });
+
+    it('should enforce username length constraint', async () => {
+      // Try to insert username that's too short
+      const { error: shortError } = await supabase.from('profiles').insert({
+        id: crypto.randomUUID(),
+        email: 'short@example.com',
+        username: 'ab', // Less than 3 characters
+      });
+
+      expect(shortError).toBeDefined();
+      expect(shortError?.code).toBe('23514'); // Check constraint violation
+
+      // Try to insert username that's too long
+      const { error: longError } = await supabase.from('profiles').insert({
+        id: crypto.randomUUID(),
+        email: 'long@example.com',
+        username: 'a'.repeat(31), // More than 30 characters
+      });
+
+      expect(longError).toBeDefined();
+      expect(longError?.code).toBe('23514'); // Check constraint violation
+    });
+
+    it('should enforce bio length constraint', async () => {
+      // Try to update bio that's too long
+      const { error } = await supabase
+        .from('profiles')
+        .update({ bio: 'a'.repeat(501) }) // More than 500 characters
+        .eq('id', userId);
+
+      expect(error).toBeDefined();
+      expect(error?.code).toBe('23514'); // Check constraint violation
+    });
   });
 
   describe('Updated At Trigger', () => {
     it('should automatically update updated_at on record update', async () => {
-      // Get initial user data
+      // Get initial profile data
       const { data: initialData } = await supabase
-        .from('users')
+        .from('profiles')
         .select('updated_at')
         .eq('id', userId)
         .single();
@@ -116,17 +152,17 @@ describe('Users Table', () => {
       // Wait a bit to ensure timestamp difference
       await new Promise((resolve) => setTimeout(resolve, 100));
 
-      // Update username
+      // Update bio
       const { error: updateError } = await supabase
-        .from('users')
-        .update({ username: 'updateduser' })
+        .from('profiles')
+        .update({ bio: 'Updated bio' })
         .eq('id', userId);
 
       expect(updateError).toBeNull();
 
       // Check if updated_at changed
       const { data: updatedData } = await supabase
-        .from('users')
+        .from('profiles')
         .select('updated_at')
         .eq('id', userId)
         .single();
@@ -141,44 +177,11 @@ describe('Users Table', () => {
     });
   });
 
-  describe('Indexes and Performance', () => {
-    it('should have indexes on email, username, and created_at', async () => {
-      // Query to check indexes (this is more of a smoke test)
-      const { data: emailQuery, error: emailError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('email', 'nonexistent@example.com');
-
-      expect(emailError).toBeNull();
-      expect(emailQuery).toEqual([]);
-
-      const { data: usernameQuery, error: usernameError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('username', 'nonexistentuser');
-
-      expect(usernameError).toBeNull();
-      expect(usernameQuery).toEqual([]);
-
-      const { data: dateQuery, error: dateError } = await supabase
-        .from('users')
-        .select('id')
-        .order('created_at', { ascending: false })
-        .limit(10);
-
-      expect(dateError).toBeNull();
-      expect(dateQuery).toBeDefined();
-    });
-  });
-
   describe('Row Level Security', () => {
-    it('should allow users to view their own record', async () => {
-      // For testing, we'll verify RLS policies work by using service role
-      // and checking that the policies are correctly set up
-
-      // Verify user can read their own record (simulated with service role)
+    it('should allow users to view their own profile', async () => {
+      // Verify user can read their own record
       const { data, error } = await supabase
-        .from('users')
+        .from('profiles')
         .select('*')
         .eq('id', userId)
         .single();
@@ -186,39 +189,37 @@ describe('Users Table', () => {
       expect(error).toBeNull();
       expect(data).toBeDefined();
       expect(data?.id).toBe(userId);
-
-      // The RLS policies are created by the migration, ensuring proper access control
     });
 
-    it('should allow users to update their own record', async () => {
+    it('should allow users to update their own profile', async () => {
       // Verify RLS update policy exists and works correctly
-      // We test this by confirming the user record can be updated
-      const newUsername = 'myupdatedname';
+      const newBio = 'My updated bio';
 
       const { error } = await supabase
-        .from('users')
-        .update({ username: newUsername })
+        .from('profiles')
+        .update({ bio: newBio })
         .eq('id', userId);
 
       expect(error).toBeNull();
 
       // Verify the update worked
       const { data } = await supabase
-        .from('users')
-        .select('username')
+        .from('profiles')
+        .select('bio')
         .eq('id', userId)
         .single();
 
-      expect(data?.username).toBe(newUsername);
+      expect(data?.bio).toBe(newBio);
     });
 
-    it('should have proper RLS policies preventing cross-user updates', async () => {
-      // Create another user with unique email
+    it('should allow authenticated users to view public profile info', async () => {
+      // Create another user
       const uniqueEmail = `other${Date.now()}@example.com`;
       const { data: otherUserData, error: createError } =
         await supabase.auth.admin.createUser({
           email: uniqueEmail,
-          password: 'otherpassword123',
+          password: 'Other123!@#',
+          user_metadata: { username: `otheruser${Date.now()}` },
         });
 
       expect(createError).toBeNull();
@@ -227,15 +228,13 @@ describe('Users Table', () => {
       if (!otherUserData.user) throw new Error('Failed to create other user');
       const otherUserId = otherUserData.user.id;
 
-      // Verify both users exist
-      const { data: users } = await supabase
-        .from('users')
-        .select('id')
+      // Verify both profiles exist
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, username')
         .in('id', [userId, otherUserId]);
 
-      expect(users?.length).toBe(2);
-
-      // The RLS policies created in the migration ensure users can only update their own records
+      expect(profiles?.length).toBe(2);
 
       // Clean up
       await supabase.auth.admin.deleteUser(otherUserId);
@@ -247,7 +246,7 @@ describe('Users Table', () => {
       // Create a new user
       const { data: authData } = await supabase.auth.admin.createUser({
         email: 'todelete@example.com',
-        password: 'deletepassword123',
+        password: 'Delete123!@#',
       });
 
       if (!authData?.user) {
@@ -255,9 +254,9 @@ describe('Users Table', () => {
       }
       const deleteUserId = authData.user.id;
 
-      // Verify user record exists
+      // Verify profile record exists
       const { data: beforeDelete } = await supabase
-        .from('users')
+        .from('profiles')
         .select('id')
         .eq('id', deleteUserId)
         .single();
@@ -267,9 +266,9 @@ describe('Users Table', () => {
       // Delete auth user
       await supabase.auth.admin.deleteUser(deleteUserId);
 
-      // Verify user record is deleted
+      // Verify profile record is deleted
       const { data: afterDelete } = await supabase
-        .from('users')
+        .from('profiles')
         .select('id')
         .eq('id', deleteUserId)
         .single();
@@ -277,11 +276,11 @@ describe('Users Table', () => {
       expect(afterDelete).toBeNull();
     });
 
-    it('should create user with default username from email if not provided', async () => {
+    it('should create profile with default username from email if not provided', async () => {
       // Create auth user without username metadata
       const { data: authData } = await supabase.auth.admin.createUser({
         email: 'noname@example.com',
-        password: 'nonamepassword123',
+        password: 'Noname123!@#',
       });
 
       if (!authData?.user) {
@@ -289,17 +288,53 @@ describe('Users Table', () => {
       }
       const noNameUserId = authData.user.id;
 
-      // Check if user record was created with default username
-      const { data: userData } = await supabase
-        .from('users')
+      // Check if profile record was created with default username
+      const { data: profileData } = await supabase
+        .from('profiles')
         .select('username')
         .eq('id', noNameUserId)
         .single();
 
-      expect(userData?.username).toBe('noname'); // Email prefix
+      expect(profileData?.username).toBe('noname'); // Email prefix
 
       // Clean up
       await supabase.auth.admin.deleteUser(noNameUserId);
+    });
+
+    it('should handle username conflicts when generating from email', async () => {
+      // Create first user with email prefix 'duplicate'
+      const { data: firstUserData } = await supabase.auth.admin.createUser({
+        email: 'duplicate@example.com',
+        password: 'Duplicate123!@#',
+      });
+
+      if (!firstUserData?.user) throw new Error('Failed to create first user');
+      const firstUserId = firstUserData.user.id;
+
+      // Create second user with same email prefix
+      const { data: secondUserData } = await supabase.auth.admin.createUser({
+        email: 'duplicate@another.com',
+        password: 'Duplicate123!@#',
+      });
+
+      if (!secondUserData?.user)
+        {throw new Error('Failed to create second user');}
+      const secondUserId = secondUserData.user.id;
+
+      // Check both profiles were created with unique usernames
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('username')
+        .in('id', [firstUserId, secondUserId])
+        .order('created_at');
+
+      expect(profiles?.length).toBe(2);
+      expect(profiles?.[0]?.username).toBe('duplicate');
+      expect(profiles?.[1]?.username).toMatch(/^duplicate_\d+$/); // Should have random suffix
+
+      // Clean up
+      await supabase.auth.admin.deleteUser(firstUserId);
+      await supabase.auth.admin.deleteUser(secondUserId);
     });
   });
 });

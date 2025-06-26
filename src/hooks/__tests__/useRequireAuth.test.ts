@@ -67,7 +67,7 @@ describe('useRequireAuth', () => {
       expect(result.current.loading).toBe(false);
     });
 
-    expect(mockPush).toHaveBeenCalledWith('/signin');
+    expect(mockPush).toHaveBeenCalledWith('/auth/sign-in');
   });
 
   it('redirects to custom path when specified', async () => {

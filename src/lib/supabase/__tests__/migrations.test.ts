@@ -54,12 +54,7 @@ describe('Database Migrations', () => {
       expect(data).toBeDefined();
     });
 
-    it('should have users table with correct columns', async () => {
-      const { data, error } = await supabase.from('users').select('*').limit(0);
-
-      expect(error).toBeNull();
-      expect(data).toBeDefined();
-    });
+    // Users table has been removed - using profiles table instead
   });
 
   describe('RLS Policies', () => {
@@ -105,9 +100,9 @@ describe('Database Migrations', () => {
       // In CI/CD, you would run npm run db:seed before tests
     });
 
-    it('should have seeded users', async () => {
+    it('should have seeded profiles with emails', async () => {
       const { data, error } = await supabase
-        .from('users')
+        .from('profiles')
         .select('*')
         .in('email', [
           'alice@example.com',

@@ -108,7 +108,10 @@ describe('SignOutButton', () => {
 
     await waitFor(() => {
       expect(mockSignOut).toHaveBeenCalled();
-      expect(consoleSpy).toHaveBeenCalledWith('Error signing out:', error);
+      expect(consoleSpy).toHaveBeenCalledWith(
+        'Caught error during sign out:',
+        error
+      );
       // Should not redirect on network error
       expect(mockPush).not.toHaveBeenCalled();
       expect(mockRefresh).not.toHaveBeenCalled();
