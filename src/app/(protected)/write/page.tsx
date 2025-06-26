@@ -1,6 +1,9 @@
 'use client';
 
-import MarkdownEditor from '@/components/MarkdownEditor';
+import MarkdownEditor, {
+  DRAFT_CONTENT_KEY,
+  DRAFT_TIMESTAMP_KEY,
+} from '@/components/MarkdownEditor';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createPost, updatePost, getPostById } from '@/lib/supabase/posts';
@@ -67,6 +70,10 @@ export default function WritePage() {
           content: editorContent,
           status: 'published',
         });
+
+        // Clear localStorage draft before redirecting
+        localStorage.removeItem(DRAFT_CONTENT_KEY);
+        localStorage.removeItem(DRAFT_TIMESTAMP_KEY);
 
         // Redirect to homepage after successful save
         router.push('/');

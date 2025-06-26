@@ -42,10 +42,12 @@ vi.mock('@/components/MarkdownEditor', () => ({
           onChange={(e) => setContent(e.target.value)}
           data-testid="markdown-editor"
         />
-        <button onClick={() => onSave(content)}>Save</button>
+        <button onClick={() => onSave(content)}>Post</button>
       </div>
     );
   },
+  DRAFT_CONTENT_KEY: 'draft-content',
+  DRAFT_TIMESTAMP_KEY: 'draft-timestamp',
 }));
 
 describe('WritePage', () => {
@@ -78,7 +80,7 @@ describe('WritePage', () => {
     fireEvent.change(titleInput, { target: { value: 'Test Post' } });
 
     // Click save
-    const saveButton = screen.getByText('Save');
+    const saveButton = screen.getByText('Post');
     fireEvent.click(saveButton);
 
     await waitFor(() => {
@@ -115,7 +117,7 @@ describe('WritePage', () => {
     fireEvent.change(titleInput, { target: { value: 'Updated Post' } });
 
     // Click save
-    const saveButton = screen.getByText('Save');
+    const saveButton = screen.getByText('Post');
     fireEvent.click(saveButton);
 
     await waitFor(() => {
@@ -132,7 +134,7 @@ describe('WritePage', () => {
     render(<WritePage />);
 
     // Click save without entering title
-    const saveButton = screen.getByText('Save');
+    const saveButton = screen.getByText('Post');
     fireEvent.click(saveButton);
 
     await waitFor(() => {
