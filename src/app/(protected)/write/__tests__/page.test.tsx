@@ -1,9 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import WritePage from '../page';
-import { createPost, updatePost, getPostById } from '@/lib/supabase/posts';
 import { useRouter, useSearchParams } from 'next/navigation';
+import * as postsLib from '@/lib/supabase/posts';
+import type { Database } from '@/types/database.generated';
+
+type Post = Database['public']['Tables']['posts']['Row'];
 
 // Mock next/navigation
 vi.mock('next/navigation', () => ({
@@ -11,141 +13,387 @@ vi.mock('next/navigation', () => ({
   useSearchParams: vi.fn(),
 }));
 
-// Mock supabase posts functions
+// Mock Supabase posts functions
 vi.mock('@/lib/supabase/posts', () => ({
   createPost: vi.fn(),
   updatePost: vi.fn(),
-  getPostById: vi
-    .fn()
-    .mockResolvedValue({ id: '123', title: 'Test', content: 'Content' }),
+  getPostById: vi.fn(),
+  getUserCurrentPost: vi.fn(),
 }));
 
-// Import React for the mock
-import React from 'react';
-
-// Mock MarkdownEditor - need to make it more realistic
+// Mock the MarkdownEditor component
 vi.mock('@/components/MarkdownEditor', () => ({
-  default: function MockMarkdownEditor({
+  default: ({
     onSave,
-    initialContent,
+    placeholder,
   }: {
     onSave: (content: string) => void;
-    initialContent?: string;
-  }) {
-    const [content, setContent] = React.useState(
-      initialContent || 'Test content'
-    );
-    return (
-      <div>
-        <textarea
-          value={content}
-          onChange={(e) => setContent(e.target.value)}
-          data-testid="markdown-editor"
-        />
-        <button onClick={() => onSave(content)}>Post</button>
-      </div>
-    );
-  },
+    placeholder: string;
+  }) => (
+    <div>
+      <textarea
+        data-testid="markdown-editor"
+        placeholder={placeholder}
+        onChange={(e) => {
+          localStorage.setItem('draft-content', e.target.value);
+        }}
+      />
+      <button
+        onClick={() => onSave(localStorage.getItem('draft-content') || '')}
+      >
+        Save
+      </button>
+    </div>
+  ),
   DRAFT_CONTENT_KEY: 'draft-content',
   DRAFT_TIMESTAMP_KEY: 'draft-timestamp',
 }));
 
 describe('WritePage', () => {
   const mockPush = vi.fn();
-  const mockReplace = vi.fn();
+  const mockGet = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
     vi.mocked(useRouter).mockReturnValue({
       push: mockPush,
-      replace: mockReplace,
       back: vi.fn(),
       forward: vi.fn(),
       refresh: vi.fn(),
+      replace: vi.fn(),
       prefetch: vi.fn(),
-    } as any);
+    } as unknown as ReturnType<typeof useRouter>);
     vi.mocked(useSearchParams).mockReturnValue({
-      get: vi.fn().mockReturnValue(null),
-    } as any);
+      get: mockGet,
+      getAll: vi.fn(),
+      has: vi.fn(),
+      keys: vi.fn(),
+      values: vi.fn(),
+      entries: vi.fn(),
+      forEach: vi.fn(),
+      toString: vi.fn(),
+      size: 0,
+      [Symbol.iterator]: vi.fn(),
+    } as unknown as ReturnType<typeof useSearchParams>);
+    mockGet.mockReturnValue(null);
   });
 
-  it('should create a new post as published and redirect to homepage on save', async () => {
-    const mockPost = { id: '123', title: 'Test Post' };
-    vi.mocked(createPost).mockResolvedValue(mockPost as any);
+  it('renders the page with title input and publish button', () => {
+    render(<WritePage />);
+
+    expect(
+      screen.getByPlaceholderText('Enter your title...')
+    ).toBeInTheDocument();
+    expect(screen.getByText('Publish')).toBeInTheDocument();
+    expect(screen.getByTestId('markdown-editor')).toBeInTheDocument();
+  });
+
+  it('disables publish button when title is empty', () => {
+    render(<WritePage />);
+
+    const publishButton = screen.getByText('Publish');
+    expect(publishButton).toBeDisabled();
+  });
+
+  it('enables publish button when title is entered', () => {
+    render(<WritePage />);
+
+    const titleInput = screen.getByPlaceholderText('Enter your title...');
+    const publishButton = screen.getByText('Publish');
+
+    fireEvent.change(titleInput, { target: { value: 'My New Post' } });
+
+    expect(publishButton).not.toBeDisabled();
+  });
+
+  it('shows error when trying to publish without content', async () => {
+    render(<WritePage />);
+
+    const titleInput = screen.getByPlaceholderText('Enter your title...');
+    const publishButton = screen.getByText('Publish');
+
+    fireEvent.change(titleInput, { target: { value: 'My New Post' } });
+    fireEvent.click(publishButton);
+
+    await waitFor(() => {
+      expect(screen.getByText('Please enter some content')).toBeInTheDocument();
+    });
+  });
+
+  it('shows confirmation dialog when user has an existing post', async () => {
+    const existingPost: Post = {
+      id: 'existing-id',
+      title: 'My Existing Post',
+      content: 'Existing content',
+      status: 'published',
+      author_id: 'user-id',
+      slug: 'my-existing-post',
+      excerpt: 'Existing content excerpt',
+      published_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    vi.mocked(postsLib.getUserCurrentPost).mockResolvedValue(existingPost);
 
     render(<WritePage />);
 
-    // Enter title
     const titleInput = screen.getByPlaceholderText('Enter your title...');
+    const editor = screen.getByTestId('markdown-editor');
+    const publishButton = screen.getByText('Publish');
+
+    fireEvent.change(titleInput, { target: { value: 'My New Post' } });
+    fireEvent.change(editor, { target: { value: 'New content' } });
+    fireEvent.click(publishButton);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText('Replace Your Current Post?')
+      ).toBeInTheDocument();
+      // Check for the dialog content by searching for partial text
+      expect(screen.getByText(/Your current post/)).toBeInTheDocument();
+      expect(
+        screen.getByText(/will be replaced with this new post/)
+      ).toBeInTheDocument();
+    });
+  });
+
+  it('publishes post without confirmation for new users', async () => {
+    vi.mocked(postsLib.getUserCurrentPost).mockResolvedValue(null);
+    const newPost: Post = {
+      id: 'new-id',
+      title: 'My First Post',
+      content: 'First post content',
+      status: 'published',
+      author_id: 'user-id',
+      slug: 'my-first-post',
+      excerpt: 'First post content excerpt',
+      published_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    vi.mocked(postsLib.createPost).mockResolvedValue(newPost);
+
+    render(<WritePage />);
+
+    const titleInput = screen.getByPlaceholderText('Enter your title...');
+    const editor = screen.getByTestId('markdown-editor');
+    const publishButton = screen.getByText('Publish');
+
+    fireEvent.change(titleInput, { target: { value: 'My First Post' } });
+    fireEvent.change(editor, { target: { value: 'First post content' } });
+    fireEvent.click(publishButton);
+
+    await waitFor(() => {
+      expect(postsLib.createPost).toHaveBeenCalledWith({
+        title: 'My First Post',
+        content: 'First post content',
+        status: 'published',
+      });
+      expect(mockPush).toHaveBeenCalledWith('/');
+    });
+  });
+
+  it('replaces existing post when user confirms', async () => {
+    const existingPost: Post = {
+      id: 'existing-id',
+      title: 'Old Post',
+      content: 'Old content',
+      status: 'published',
+      author_id: 'user-id',
+      slug: 'old-post',
+      excerpt: 'Old content excerpt',
+      published_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    vi.mocked(postsLib.getUserCurrentPost).mockResolvedValue(existingPost);
+    const newPost: Post = {
+      id: 'new-id',
+      title: 'New Post',
+      content: 'New content',
+      status: 'published',
+      author_id: 'user-id',
+      slug: 'new-post',
+      excerpt: 'New content excerpt',
+      published_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    vi.mocked(postsLib.createPost).mockResolvedValue(newPost);
+
+    render(<WritePage />);
+
+    const titleInput = screen.getByPlaceholderText('Enter your title...');
+    const editor = screen.getByTestId('markdown-editor');
+    const publishButton = screen.getByText('Publish');
+
+    fireEvent.change(titleInput, { target: { value: 'New Post' } });
+    fireEvent.change(editor, { target: { value: 'New content' } });
+    fireEvent.click(publishButton);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText('Replace Your Current Post?')
+      ).toBeInTheDocument();
+    });
+
+    const replaceButton = screen.getByText('Replace Post');
+    fireEvent.click(replaceButton);
+
+    await waitFor(() => {
+      expect(postsLib.createPost).toHaveBeenCalledWith({
+        title: 'New Post',
+        content: 'New content',
+        status: 'published',
+      });
+      expect(mockPush).toHaveBeenCalledWith('/');
+    });
+  });
+
+  it('cancels replacement when user clicks cancel', async () => {
+    const existingPost: Post = {
+      id: 'existing-id',
+      title: 'Old Post',
+      content: 'Old content',
+      status: 'published',
+      author_id: 'user-id',
+      slug: 'old-post',
+      excerpt: 'Old content excerpt',
+      published_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    vi.mocked(postsLib.getUserCurrentPost).mockResolvedValue(existingPost);
+
+    render(<WritePage />);
+
+    const titleInput = screen.getByPlaceholderText('Enter your title...');
+    const editor = screen.getByTestId('markdown-editor');
+    const publishButton = screen.getByText('Publish');
+
+    fireEvent.change(titleInput, { target: { value: 'New Post' } });
+    fireEvent.change(editor, { target: { value: 'New content' } });
+    fireEvent.click(publishButton);
+
+    await waitFor(() => {
+      expect(
+        screen.getByText('Replace Your Current Post?')
+      ).toBeInTheDocument();
+    });
+
+    const cancelButton = screen.getByText('Cancel');
+    fireEvent.click(cancelButton);
+
+    await waitFor(() => {
+      expect(
+        screen.queryByText('Replace Your Current Post?')
+      ).not.toBeInTheDocument();
+    });
+
+    expect(postsLib.createPost).not.toHaveBeenCalled();
+  });
+
+  it('shows loading overlay during publishing', async () => {
+    vi.mocked(postsLib.getUserCurrentPost).mockResolvedValue(null);
+    const newPost: Post = {
+      id: 'new-id',
+      title: 'Test Post',
+      content: 'Test content',
+      status: 'published',
+      author_id: 'user-id',
+      slug: 'test-post',
+      excerpt: 'Test content excerpt',
+      published_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+
+    // Create a promise that we can control
+    let resolvePublish: (value: Post) => void;
+    const publishPromise = new Promise<Post>((resolve) => {
+      resolvePublish = resolve;
+    });
+
+    vi.mocked(postsLib.createPost).mockImplementation(() => publishPromise);
+
+    render(<WritePage />);
+
+    const titleInput = screen.getByPlaceholderText('Enter your title...');
+    const editor = screen.getByTestId('markdown-editor');
+    const publishButton = screen.getByText('Publish');
+
     fireEvent.change(titleInput, { target: { value: 'Test Post' } });
+    fireEvent.change(editor, { target: { value: 'Test content' } });
+    fireEvent.click(publishButton);
 
-    // Click save
-    const saveButton = screen.getByText('Post');
-    fireEvent.click(saveButton);
-
+    // Wait a moment for the loading state to appear
     await waitFor(() => {
-      expect(createPost).toHaveBeenCalledWith({
-        title: 'Test Post',
-        content: 'Test content',
-        status: 'published',
-      });
-      expect(mockPush).toHaveBeenCalledWith('/');
+      // Check if the publish button is disabled (indicating loading state)
+      expect(publishButton).toBeDisabled();
     });
+
+    // Resolve the promise to complete the publish
+    resolvePublish!(newPost);
   });
 
-  it('should update existing post as published and redirect on save', async () => {
-    const postId = 'existing-post-id';
-    vi.mocked(useSearchParams).mockReturnValue({
-      get: vi.fn().mockReturnValue(postId),
-    } as any);
-    vi.mocked(getPostById).mockResolvedValue({
-      id: postId,
-      title: 'Test',
-      content: 'Content',
-    } as any);
-    vi.mocked(updatePost).mockResolvedValue({} as any);
+  it('clears draft from localStorage after successful publish', async () => {
+    localStorage.setItem('draft-content', 'Draft content');
+    localStorage.setItem('draft-timestamp', Date.now().toString());
+
+    vi.mocked(postsLib.getUserCurrentPost).mockResolvedValue(null);
+    const newPost: Post = {
+      id: 'new-id',
+      title: 'Test Post',
+      content: 'Test content',
+      status: 'published',
+      author_id: 'user-id',
+      slug: 'test-post',
+      excerpt: 'Test content excerpt',
+      published_at: new Date().toISOString(),
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    vi.mocked(postsLib.createPost).mockResolvedValue(newPost);
 
     render(<WritePage />);
 
-    // Wait for loading to complete
-    await waitFor(() => {
-      expect(screen.queryByText('Loading post...')).not.toBeInTheDocument();
-    });
-
-    // Enter title
     const titleInput = screen.getByPlaceholderText('Enter your title...');
-    fireEvent.change(titleInput, { target: { value: 'Updated Post' } });
+    const publishButton = screen.getByText('Publish');
 
-    // Click save
-    const saveButton = screen.getByText('Post');
-    fireEvent.click(saveButton);
+    fireEvent.change(titleInput, { target: { value: 'Test Post' } });
+    localStorage.setItem('draft-content', 'Test content');
+    fireEvent.click(publishButton);
 
     await waitFor(() => {
-      expect(updatePost).toHaveBeenCalledWith(postId, {
-        title: 'Updated Post',
-        content: 'Content',
-        status: 'published',
-      });
       expect(mockPush).toHaveBeenCalledWith('/');
     });
+
+    expect(localStorage.getItem('draft-content')).toBeNull();
+    expect(localStorage.getItem('draft-timestamp')).toBeNull();
   });
 
-  it('should show error when title is missing', async () => {
+  it('displays error message when publish fails', async () => {
+    vi.mocked(postsLib.getUserCurrentPost).mockResolvedValue(null);
+    vi.mocked(postsLib.createPost).mockRejectedValue(
+      new Error('Network error')
+    );
+
     render(<WritePage />);
 
-    // Click save without entering title
-    const saveButton = screen.getByText('Post');
-    fireEvent.click(saveButton);
+    const titleInput = screen.getByPlaceholderText('Enter your title...');
+    const editor = screen.getByTestId('markdown-editor');
+    const publishButton = screen.getByText('Publish');
+
+    fireEvent.change(titleInput, { target: { value: 'Test Post' } });
+    fireEvent.change(editor, { target: { value: 'Test content' } });
+    fireEvent.click(publishButton);
 
     await waitFor(() => {
-      expect(screen.getByText('Please enter a title')).toBeInTheDocument();
-      expect(createPost).not.toHaveBeenCalled();
-      expect(mockPush).not.toHaveBeenCalled();
+      expect(screen.getByText('Network error')).toBeInTheDocument();
     });
-  });
-
-  it('should show error when content is empty', async () => {
-    // We'll need to test this differently since the mock is defined at module level
-    // For now, we'll skip this test as it requires a different approach
   });
 });

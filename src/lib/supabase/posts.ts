@@ -150,6 +150,29 @@ export async function getUserDrafts() {
   return posts;
 }
 
+export async function getUserCurrentPost() {
+  const supabase = createClient();
+  const { data: user } = await supabase.auth.getUser();
+
+  if (!user.user) {
+    throw new Error('User not authenticated');
+  }
+
+  const { data: post, error } = await supabase
+    .from('posts')
+    .select('*')
+    .eq('author_id', user.user.id)
+    .eq('status', 'published')
+    .single();
+
+  if (error && error.code !== 'PGRST116') {
+    // PGRST116 is "no rows found" which is expected if user has no published post
+    throw error;
+  }
+
+  return post;
+}
+
 function generateSlug(title: string): string {
   // Generate base slug
   const baseSlug = title
