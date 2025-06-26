@@ -17,6 +17,19 @@ export async function createPost(data: {
     throw new Error('User not authenticated');
   }
 
+  // Validate input
+  if (!data.title || data.title.trim().length === 0) {
+    throw new Error('Title cannot be empty');
+  }
+
+  if (!data.content || data.content.trim().length === 0) {
+    throw new Error('Content cannot be empty');
+  }
+
+  if (data.title.length > 200) {
+    throw new Error('Title must be 200 characters or less');
+  }
+
   // Generate slug from title if not provided
   const slug = data.slug || generateSlug(data.title);
 
@@ -120,9 +133,16 @@ export async function getUserDrafts() {
 }
 
 function generateSlug(title: string): string {
-  return title
+  // Generate base slug
+  const baseSlug = title
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
-    .substring(0, 100);
+    .substring(0, 80); // Leave room for suffix
+
+  // Add a timestamp suffix to ensure uniqueness
+  const timestamp = Date.now().toString(36); // Base36 for shorter string
+  const randomStr = Math.random().toString(36).substring(2, 6); // 4 random chars
+
+  return `${baseSlug}-${timestamp}-${randomStr}`.substring(0, 100);
 }

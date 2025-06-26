@@ -42,6 +42,11 @@ export default function WritePage() {
       return;
     }
 
+    if (!editorContent.trim()) {
+      setError('Please enter some content');
+      return;
+    }
+
     setError(null);
 
     try {
@@ -65,7 +70,29 @@ export default function WritePage() {
       }
     } catch (err) {
       console.error('Error saving post:', err);
-      setError('Failed to save post. Please try again.');
+
+      // Extract error message
+      let errorMessage = 'Failed to save post. Please try again.';
+
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      } else if (typeof err === 'object' && err !== null) {
+        const error = err as {
+          message?: string;
+          error?: { message?: string };
+          code?: string;
+        };
+        if (error.message) {
+          errorMessage = error.message;
+        } else if (error.error?.message) {
+          errorMessage = error.error.message;
+        } else if (error.code === '23505') {
+          errorMessage =
+            'A post with this title already exists. Please try a different title.';
+        }
+      }
+
+      setError(errorMessage);
       throw err; // Re-throw to let MarkdownEditor handle the error state
     }
   };
