@@ -29,7 +29,7 @@ describe('PlainTextEditor', () => {
     expect(textarea).toBeInTheDocument();
     expect(textarea).toHaveAttribute(
       'placeholder',
-      'Start writing your content here...'
+      'Start writing your content here... (plain text only, no formatting)'
     );
   });
 

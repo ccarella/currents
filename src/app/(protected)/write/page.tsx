@@ -256,7 +256,7 @@ export default function WritePage() {
         <div className="flex-1 overflow-hidden">
           <PlainTextEditor
             initialContent={content}
-            placeholder="Start writing your story..."
+            placeholder="Start writing your story... (plain text only, no formatting)"
           />
         </div>
       </div>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { FileText, Maximize2, Minimize2 } from 'lucide-react';
 
 const AUTO_SAVE_DELAY = 1000;
@@ -14,7 +14,7 @@ interface PlainTextEditorProps {
 
 export default function PlainTextEditor({
   initialContent = '',
-  placeholder = 'Start writing your content here...',
+  placeholder = 'Start writing your content here... (plain text only, no formatting)',
 }: PlainTextEditorProps) {
   const [content, setContent] = useState(initialContent);
   const [isFocusMode, setIsFocusMode] = useState(false);
@@ -98,6 +98,11 @@ export default function PlainTextEditor({
     setContent(initialContent);
   }, [initialContent]);
 
+  // Auto-focus the textarea on mount
+  useEffect(() => {
+    textareaRef.current?.focus();
+  }, []);
+
   // Calculate word count and reading time
   useEffect(() => {
     const words = content
@@ -116,7 +121,7 @@ export default function PlainTextEditor({
     setIsFocusMode(!isFocusMode);
   }, [isFocusMode]);
 
-  const formatLastSaved = () => {
+  const formatLastSaved = useMemo(() => {
     if (!lastSaved) return null;
 
     const now = new Date();
@@ -131,7 +136,7 @@ export default function PlainTextEditor({
     }
     if (hours < 24) return `Saved ${hours} hour${hours > 1 ? 's' : ''} ago`;
     return `Saved on ${lastSaved.toLocaleDateString()}`;
-  };
+  }, [lastSaved]);
 
   return (
     <div
@@ -148,8 +153,8 @@ export default function PlainTextEditor({
             <span className="text-gray-400">•</span>
             <span>{readingTime} min read</span>
           </div>
-          {formatLastSaved() && (
-            <span className="text-sm text-gray-500">{formatLastSaved()}</span>
+          {formatLastSaved && (
+            <span className="text-sm text-gray-500">{formatLastSaved}</span>
           )}
           {hasUnsavedChanges && (
             <span className="text-sm text-orange-500">• Unsaved changes</span>

@@ -18,6 +18,8 @@ vi.mock('@/components/PlainTextEditor', () => ({
       <div>{initialContent}</div>
     </div>
   ),
+  DRAFT_CONTENT_KEY: 'draft-content',
+  DRAFT_TIMESTAMP_KEY: 'draft-timestamp',
 }));
 
 // Mock next/navigation
@@ -64,7 +66,11 @@ describe('WritePage', () => {
       screen.getByPlaceholderText('Enter your title...')
     ).toBeInTheDocument();
     expect(screen.getByTestId('plain-text-editor')).toBeInTheDocument();
-    expect(screen.getByText('Start writing your story...')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Start writing your story... (plain text only, no formatting)'
+      )
+    ).toBeInTheDocument();
   });
 
   it('updates title when typing', async () => {
@@ -76,15 +82,14 @@ describe('WritePage', () => {
     expect(titleInput).toHaveValue('My New Post');
   });
 
-  it('shows error when publishing without title', async () => {
+  it('disables publish button when title is empty', () => {
     render(<WritePage />);
 
     const publishButton = screen.getByText('Publish');
-    await user.click(publishButton);
+    expect(publishButton).toBeDisabled();
 
-    await waitFor(() => {
-      expect(screen.getByText('Please enter a title')).toBeInTheDocument();
-    });
+    // Button should not be clickable when disabled
+    expect(publishButton).toHaveAttribute('disabled');
   });
 
   it('creates new post on publish', async () => {
