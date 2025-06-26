@@ -311,9 +311,14 @@ describe('WritePage', () => {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     };
-    vi.mocked(postsLib.createPost).mockImplementation(
-      () => new Promise((resolve) => setTimeout(() => resolve(newPost), 100))
-    );
+
+    // Create a promise that we can control
+    let resolvePublish: (value: Post) => void;
+    const publishPromise = new Promise<Post>((resolve) => {
+      resolvePublish = resolve;
+    });
+
+    vi.mocked(postsLib.createPost).mockImplementation(() => publishPromise);
 
     render(<WritePage />);
 
@@ -325,9 +330,14 @@ describe('WritePage', () => {
     fireEvent.change(editor, { target: { value: 'Test content' } });
     fireEvent.click(publishButton);
 
+    // Wait a moment for the loading state to appear
     await waitFor(() => {
-      expect(screen.getByText('Publishing your post...')).toBeInTheDocument();
+      // Check if the publish button is disabled (indicating loading state)
+      expect(publishButton).toBeDisabled();
     });
+
+    // Resolve the promise to complete the publish
+    resolvePublish!(newPost);
   });
 
   it('clears draft from localStorage after successful publish', async () => {

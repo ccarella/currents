@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 
 interface DialogProps {
@@ -8,41 +8,102 @@ interface DialogProps {
   onClose: () => void;
   children: React.ReactNode;
   className?: string;
+  'aria-labelledby'?: string;
+  'aria-describedby'?: string;
 }
+
+// Track open dialogs to manage body overflow
+let openDialogCount = 0;
 
 export function Dialog({
   open,
   onClose,
   children,
   className = '',
+  'aria-labelledby': ariaLabelledBy,
+  'aria-describedby': ariaDescribedBy,
 }: DialogProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
+  const previousActiveElement = useRef<HTMLElement | null>(null);
+  const [mounted, setMounted] = useState(false);
+
+  // Handle client-side mounting
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
-    if (open) {
-      // Focus trap
+    if (open && mounted) {
+      // Store the currently focused element
+      previousActiveElement.current = document.activeElement as HTMLElement;
+
+      // Focus the dialog
+      if (dialogRef.current) {
+        dialogRef.current.focus();
+      }
+
+      // Increment dialog counter and hide body overflow
+      openDialogCount++;
+      if (openDialogCount === 1) {
+        document.body.style.overflow = 'hidden';
+      }
+
+      // Handle keyboard events
       const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === 'Escape') {
           onClose();
         }
+
+        // Tab trap
+        if (e.key === 'Tab' && dialogRef.current) {
+          const focusableElements = dialogRef.current.querySelectorAll(
+            'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+          );
+          const firstElement = focusableElements[0] as HTMLElement;
+          const lastElement = focusableElements[
+            focusableElements.length - 1
+          ] as HTMLElement;
+
+          if (e.shiftKey && document.activeElement === firstElement) {
+            e.preventDefault();
+            lastElement?.focus();
+          } else if (!e.shiftKey && document.activeElement === lastElement) {
+            e.preventDefault();
+            firstElement?.focus();
+          }
+        }
       };
+
       document.addEventListener('keydown', handleKeyDown);
-      document.body.style.overflow = 'hidden';
 
       return () => {
         document.removeEventListener('keydown', handleKeyDown);
-        document.body.style.overflow = '';
+
+        // Decrement dialog counter and restore body overflow if needed
+        openDialogCount--;
+        if (openDialogCount === 0) {
+          document.body.style.overflow = '';
+        }
+
+        // Restore focus to the previous element
+        if (
+          previousActiveElement.current &&
+          previousActiveElement.current.focus
+        ) {
+          previousActiveElement.current.focus();
+        }
       };
     }
     return undefined;
-  }, [open, onClose]);
+  }, [open, onClose, mounted]);
 
-  if (!open) return null;
+  // Don't render on server or when not mounted
+  if (!mounted || !open) return null;
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div
-        className="fixed inset-0 bg-black/50"
+        className="fixed inset-0 bg-black/50 transition-opacity"
         onClick={onClose}
         aria-hidden="true"
       />
@@ -50,7 +111,10 @@ export function Dialog({
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        className={`relative z-10 w-full max-w-md rounded-lg bg-white p-6 shadow-xl ${className}`}
+        aria-labelledby={ariaLabelledBy}
+        aria-describedby={ariaDescribedBy}
+        tabIndex={-1}
+        className={`relative z-10 w-full max-w-md rounded-lg bg-white p-6 shadow-xl transition-all ${className}`}
       >
         {children}
       </div>

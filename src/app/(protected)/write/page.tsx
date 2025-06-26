@@ -4,7 +4,7 @@ import MarkdownEditor, {
   DRAFT_CONTENT_KEY,
   DRAFT_TIMESTAMP_KEY,
 } from '@/components/MarkdownEditor';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   createPost,
@@ -20,6 +20,35 @@ import {
   DialogFooter,
 } from '@/components/ui/Dialog';
 import { LoadingOverlay } from '@/components/ui/LoadingOverlay';
+
+// Utility function to extract error messages
+function getErrorMessage(err: unknown): string {
+  if (err instanceof Error) {
+    return err.message;
+  }
+
+  if (typeof err === 'object' && err !== null) {
+    const error = err as {
+      message?: string;
+      error?: { message?: string };
+      code?: string;
+    };
+
+    if (error.message) {
+      return error.message;
+    }
+
+    if (error.error?.message) {
+      return error.error.message;
+    }
+
+    if (error.code === '23505') {
+      return 'A post with this title already exists. Please try a different title.';
+    }
+  }
+
+  return 'An unexpected error occurred. Please try again.';
+}
 
 export default function WritePage() {
   const router = useRouter();
@@ -39,120 +68,141 @@ export default function WritePage() {
   } | null>(null);
   const [pendingContent, setPendingContent] = useState<string>('');
 
+  // Track component mount state to prevent memory leaks
+  const isMountedRef = useRef(true);
+
   // Load existing post if editing
   useEffect(() => {
+    const abortController = new AbortController();
+
     if (postId) {
       setIsLoading(true);
       getPostById(postId)
         .then((post) => {
-          setTitle(post.title);
-          setContent(post.content || '');
-          setCurrentPostId(post.id);
+          if (isMountedRef.current && !abortController.signal.aborted) {
+            setTitle(post.title);
+            setContent(post.content || '');
+            setCurrentPostId(post.id);
+          }
         })
         .catch((err) => {
-          setError('Failed to load post');
-          console.error('Error loading post:', err);
+          if (isMountedRef.current && !abortController.signal.aborted) {
+            setError('Failed to load post');
+            console.error('Error loading post:', err);
+          }
         })
         .finally(() => {
-          setIsLoading(false);
+          if (isMountedRef.current && !abortController.signal.aborted) {
+            setIsLoading(false);
+          }
         });
     }
+
+    return () => {
+      abortController.abort();
+    };
   }, [postId]);
 
-  const handlePublish = async (editorContent: string) => {
-    if (!title.trim()) {
-      setError('Please enter a title');
-      return;
-    }
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
 
-    if (!editorContent.trim()) {
-      setError('Please enter some content');
-      return;
-    }
+  const publishPost = useCallback(
+    async (editorContent: string) => {
+      setIsPublishing(true);
+      setError(null);
 
-    setError(null);
-    setPendingContent(editorContent);
+      try {
+        if (currentPostId) {
+          // Update existing post and publish it
+          await updatePost(currentPostId, {
+            title,
+            content: editorContent,
+            status: 'published',
+          });
+        } else {
+          // Create new post as published
+          await createPost({
+            title,
+            content: editorContent,
+            status: 'published',
+          });
+        }
 
-    try {
-      // Check if user has an existing published post
-      const currentPost = await getUserCurrentPost();
+        // Clear localStorage draft after successful publish
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem(DRAFT_CONTENT_KEY);
+          localStorage.removeItem(DRAFT_TIMESTAMP_KEY);
+        }
 
-      if (currentPost && (!currentPostId || currentPostId !== currentPost.id)) {
-        // User has an existing post that's not the one being edited
-        setExistingPost({ id: currentPost.id, title: currentPost.title });
-        setShowReplaceDialog(true);
+        // Show success and redirect
+        if (isMountedRef.current) {
+          router.push('/');
+        }
+      } catch (err) {
+        if (isMountedRef.current) {
+          console.error('Error publishing post:', err);
+          setError(getErrorMessage(err));
+        }
+      } finally {
+        if (isMountedRef.current) {
+          setIsPublishing(false);
+        }
+      }
+    },
+    [currentPostId, title, router]
+  );
+
+  const handlePublish = useCallback(
+    async (editorContent: string) => {
+      if (!title.trim()) {
+        setError('Please enter a title');
         return;
       }
 
-      // No existing post or editing the same post, proceed with publish
-      await publishPost(editorContent);
-    } catch (err) {
-      console.error('Error checking existing post:', err);
-      setError('Failed to check existing posts. Please try again.');
-    }
-  };
-
-  const publishPost = async (editorContent: string) => {
-    setIsPublishing(true);
-    setError(null);
-
-    try {
-      if (currentPostId) {
-        // Update existing post and publish it
-        await updatePost(currentPostId, {
-          title,
-          content: editorContent,
-          status: 'published',
-        });
-      } else {
-        // Create new post as published
-        await createPost({
-          title,
-          content: editorContent,
-          status: 'published',
-        });
+      if (!editorContent.trim()) {
+        setError('Please enter some content');
+        return;
       }
 
-      // Clear localStorage draft after successful publish
-      localStorage.removeItem(DRAFT_CONTENT_KEY);
-      localStorage.removeItem(DRAFT_TIMESTAMP_KEY);
+      setError(null);
+      setPendingContent(editorContent);
 
-      // Show success and redirect
-      router.push('/');
-    } catch (err) {
-      console.error('Error publishing post:', err);
+      try {
+        // Check if user has an existing published post
+        const currentPost = await getUserCurrentPost();
 
-      // Extract error message
-      let errorMessage = 'Failed to publish post. Please try again.';
+        if (isMountedRef.current) {
+          if (
+            currentPost &&
+            (!currentPostId || currentPostId !== currentPost.id)
+          ) {
+            // User has an existing post that's not the one being edited
+            setExistingPost({ id: currentPost.id, title: currentPost.title });
+            setShowReplaceDialog(true);
+            return;
+          }
 
-      if (err instanceof Error) {
-        errorMessage = err.message;
-      } else if (typeof err === 'object' && err !== null) {
-        const error = err as {
-          message?: string;
-          error?: { message?: string };
-          code?: string;
-        };
-        if (error.message) {
-          errorMessage = error.message;
-        } else if (error.error?.message) {
-          errorMessage = error.error.message;
-        } else if (error.code === '23505') {
-          errorMessage =
-            'A post with this title already exists. Please try a different title.';
+          // No existing post or editing the same post, proceed with publish
+          await publishPost(editorContent);
+        }
+      } catch (err) {
+        if (isMountedRef.current) {
+          console.error('Error checking existing post:', err);
+          setError('Failed to check existing posts. Please try again.');
         }
       }
+    },
+    [title, currentPostId, publishPost]
+  );
 
-      setError(errorMessage);
-    } finally {
-      setIsPublishing(false);
-    }
-  };
-
-  const handleReplace = async () => {
+  const handleReplace = useCallback(async () => {
     setShowReplaceDialog(false);
     await publishPost(pendingContent);
-  };
+  }, [pendingContent, publishPost]);
 
   if (isLoading) {
     return (
@@ -187,11 +237,14 @@ export default function WritePage() {
               <button
                 onClick={() => {
                   const editorContent =
-                    localStorage.getItem(DRAFT_CONTENT_KEY) || content;
+                    typeof window !== 'undefined'
+                      ? localStorage.getItem(DRAFT_CONTENT_KEY) || content
+                      : content;
                   handlePublish(editorContent);
                 }}
                 disabled={!title.trim() || isPublishing}
                 className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
+                aria-label={isPublishing ? 'Publishing...' : 'Publish post'}
               >
                 Publish
               </button>
@@ -213,31 +266,39 @@ export default function WritePage() {
       <Dialog
         open={showReplaceDialog}
         onClose={() => setShowReplaceDialog(false)}
+        aria-labelledby="dialog-title"
+        aria-describedby="dialog-description"
       >
         <DialogHeader>
-          <DialogTitle>Replace Your Current Post?</DialogTitle>
+          <DialogTitle>
+            <span id="dialog-title">Replace Your Current Post?</span>
+          </DialogTitle>
         </DialogHeader>
         <DialogContent>
-          <p>You can only have one published post at a time.</p>
-          <p className="mt-2">
-            Your current post{' '}
-            <strong>&ldquo;{existingPost?.title}&rdquo;</strong> will be
-            replaced with this new post.
-          </p>
-          <p className="mt-2 text-sm text-gray-600">
-            This action cannot be undone.
-          </p>
+          <div id="dialog-description">
+            <p>You can only have one published post at a time.</p>
+            <p className="mt-2">
+              Your current post{' '}
+              <strong>&ldquo;{existingPost?.title}&rdquo;</strong> will be
+              replaced with this new post.
+            </p>
+            <p className="mt-2 text-sm text-gray-600">
+              This action cannot be undone.
+            </p>
+          </div>
         </DialogContent>
         <DialogFooter>
           <button
             onClick={() => setShowReplaceDialog(false)}
             className="px-4 py-2 text-gray-700 hover:text-gray-900 transition-colors"
+            aria-label="Cancel post replacement"
           >
             Cancel
           </button>
           <button
             onClick={handleReplace}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+            aria-label="Confirm post replacement"
           >
             Replace Post
           </button>
