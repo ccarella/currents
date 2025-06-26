@@ -42,7 +42,7 @@ vi.mock('@/components/MarkdownEditor', () => ({
           onChange={(e) => setContent(e.target.value)}
           data-testid="markdown-editor"
         />
-        <button onClick={() => onSave(content)}>Save</button>
+        <button onClick={() => onSave(content)}>Post</button>
       </div>
     );
   },
@@ -67,7 +67,7 @@ describe('WritePage', () => {
     } as any);
   });
 
-  it('should create a new post as published and redirect to homepage on save', async () => {
+  it('should create a new post as published and reset form on save', async () => {
     const mockPost = { id: '123', title: 'Test Post' };
     vi.mocked(createPost).mockResolvedValue(mockPost as any);
 
@@ -78,7 +78,7 @@ describe('WritePage', () => {
     fireEvent.change(titleInput, { target: { value: 'Test Post' } });
 
     // Click save
-    const saveButton = screen.getByText('Save');
+    const saveButton = screen.getByText('Post');
     fireEvent.click(saveButton);
 
     await waitFor(() => {
@@ -87,7 +87,18 @@ describe('WritePage', () => {
         content: 'Test content',
         status: 'published',
       });
-      expect(mockPush).toHaveBeenCalledWith('/');
+      // Should not redirect anymore
+      expect(mockPush).not.toHaveBeenCalled();
+      // Check that form is reset
+      expect(screen.getByPlaceholderText('Enter your title...')).toHaveValue(
+        ''
+      );
+      // Check success message
+      expect(
+        screen.getByText(
+          'Post published successfully! You can create another post.'
+        )
+      ).toBeInTheDocument();
     });
   });
 
@@ -115,7 +126,7 @@ describe('WritePage', () => {
     fireEvent.change(titleInput, { target: { value: 'Updated Post' } });
 
     // Click save
-    const saveButton = screen.getByText('Save');
+    const saveButton = screen.getByText('Post');
     fireEvent.click(saveButton);
 
     await waitFor(() => {
@@ -132,7 +143,7 @@ describe('WritePage', () => {
     render(<WritePage />);
 
     // Click save without entering title
-    const saveButton = screen.getByText('Save');
+    const saveButton = screen.getByText('Post');
     fireEvent.click(saveButton);
 
     await waitFor(() => {

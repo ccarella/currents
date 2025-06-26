@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import dynamic from 'next/dynamic';
-import { Save, FileText, Maximize2, Minimize2 } from 'lucide-react';
+import { Send, FileText, Maximize2, Minimize2, Eye, Edit3 } from 'lucide-react';
+import PreviewPane from '@/components/editor/PreviewPane';
 
 const MDEditor = dynamic(
   () => import('@uiw/react-md-editor').then((mod) => mod.default),
@@ -31,8 +32,12 @@ export default function MarkdownEditor({
   const [wordCount, setWordCount] = useState(0);
   const [readingTime, setReadingTime] = useState(0);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [viewMode, setViewMode] = useState<'edit' | 'preview'>('edit');
+  const [editorScrollPercentage] = useState(0);
+  const [, setPreviewScrollPercentage] = useState(0);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isUnmountingRef = useRef(false);
+  const editorRef = useRef<HTMLDivElement>(null);
 
   // Auto-save to localStorage with cleanup
   useEffect(() => {
@@ -97,6 +102,11 @@ export default function MarkdownEditor({
         setLastSaved(new Date(savedTimestamp));
       }
     }
+  }, [initialContent]);
+
+  // Update content when initialContent changes (for reset functionality)
+  useEffect(() => {
+    setContent(initialContent);
   }, [initialContent]);
 
   // Calculate word count and reading time
@@ -186,8 +196,8 @@ export default function MarkdownEditor({
               className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               aria-label="Save document"
             >
-              <Save className="h-4 w-4" />
-              {isSaving ? 'Saving...' : 'Save'}
+              <Send className="h-4 w-4" />
+              {isSaving ? 'Posting...' : 'Post'}
             </button>
           )}
 
@@ -203,22 +213,57 @@ export default function MarkdownEditor({
               <Maximize2 className="h-5 w-5" />
             )}
           </button>
+
+          <div className="flex items-center border rounded-md">
+            <button
+              onClick={() => setViewMode('edit')}
+              className={`px-3 py-1.5 text-sm font-medium rounded-l-md transition-colors ${
+                viewMode === 'edit'
+                  ? 'bg-gray-100 text-gray-900'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+              aria-label="Edit mode"
+            >
+              <Edit3 className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setViewMode('preview')}
+              className={`px-3 py-1.5 text-sm font-medium rounded-r-md transition-colors ${
+                viewMode === 'preview'
+                  ? 'bg-gray-100 text-gray-900'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+              aria-label="Preview mode"
+            >
+              <Eye className="h-4 w-4" />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Editor */}
+      {/* Editor/Preview */}
       <div className="flex-1 overflow-hidden">
-        <MDEditor
-          value={content}
-          onChange={(val) => setContent(val || '')}
-          preview="live"
-          height="100%"
-          data-color-mode="light"
-          textareaProps={{
-            placeholder,
-            'aria-label': 'Markdown editor',
-          }}
-        />
+        {viewMode === 'edit' ? (
+          <div ref={editorRef} className="h-full">
+            <MDEditor
+              value={content}
+              onChange={(val) => setContent(val || '')}
+              preview="edit"
+              height="100%"
+              data-color-mode="light"
+              textareaProps={{
+                placeholder,
+                'aria-label': 'Markdown editor',
+              }}
+            />
+          </div>
+        ) : (
+          <PreviewPane
+            content={content}
+            onScroll={setPreviewScrollPercentage}
+            scrollToPercentage={editorScrollPercentage}
+          />
+        )}
       </div>
     </div>
   );
