@@ -13,6 +13,8 @@ const MDEditor = dynamic(
 // Constants
 const WORDS_PER_MINUTE = 200;
 const AUTO_SAVE_DELAY = 1000;
+export const DRAFT_CONTENT_KEY = 'draft-content';
+export const DRAFT_TIMESTAMP_KEY = 'draft-timestamp';
 
 interface MarkdownEditorProps {
   initialContent?: string;
@@ -33,11 +35,9 @@ export default function MarkdownEditor({
   const [readingTime, setReadingTime] = useState(0);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [viewMode, setViewMode] = useState<'edit' | 'preview'>('edit');
-  const [editorScrollPercentage] = useState(0);
-  const [, setPreviewScrollPercentage] = useState(0);
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isUnmountingRef = useRef(false);
-  const editorRef = useRef<HTMLDivElement>(null);
 
   // Auto-save to localStorage with cleanup
   useEffect(() => {
@@ -50,8 +50,8 @@ export default function MarkdownEditor({
       saveTimeoutRef.current = setTimeout(() => {
         if (!isUnmountingRef.current) {
           try {
-            localStorage.setItem('draft-content', content);
-            localStorage.setItem('draft-timestamp', new Date().toISOString());
+            localStorage.setItem(DRAFT_CONTENT_KEY, content);
+            localStorage.setItem(DRAFT_TIMESTAMP_KEY, new Date().toISOString());
             setLastSaved(new Date());
             setHasUnsavedChanges(false);
           } catch (error) {
@@ -93,8 +93,8 @@ export default function MarkdownEditor({
 
   // Load draft from localStorage on mount
   useEffect(() => {
-    const savedContent = localStorage.getItem('draft-content');
-    const savedTimestamp = localStorage.getItem('draft-timestamp');
+    const savedContent = localStorage.getItem(DRAFT_CONTENT_KEY);
+    const savedTimestamp = localStorage.getItem(DRAFT_TIMESTAMP_KEY);
 
     if (savedContent && !initialContent) {
       setContent(savedContent);
@@ -143,6 +143,17 @@ export default function MarkdownEditor({
 
   const toggleFocusMode = () => {
     setIsFocusMode(!isFocusMode);
+  };
+
+  const handleViewModeChange = (mode: 'edit' | 'preview') => {
+    if (mode === 'preview' && viewMode !== 'preview') {
+      setIsPreviewLoading(true);
+      setViewMode(mode);
+      // Simulate a brief loading state for large documents
+      setTimeout(() => setIsPreviewLoading(false), 100);
+    } else {
+      setViewMode(mode);
+    }
   };
 
   const formatLastSaved = useMemo(() => {
@@ -216,7 +227,7 @@ export default function MarkdownEditor({
 
           <div className="flex items-center border rounded-md">
             <button
-              onClick={() => setViewMode('edit')}
+              onClick={() => handleViewModeChange('edit')}
               className={`px-3 py-1.5 text-sm font-medium rounded-l-md transition-colors ${
                 viewMode === 'edit'
                   ? 'bg-gray-100 text-gray-900'
@@ -227,7 +238,7 @@ export default function MarkdownEditor({
               <Edit3 className="h-4 w-4" />
             </button>
             <button
-              onClick={() => setViewMode('preview')}
+              onClick={() => handleViewModeChange('preview')}
               className={`px-3 py-1.5 text-sm font-medium rounded-r-md transition-colors ${
                 viewMode === 'preview'
                   ? 'bg-gray-100 text-gray-900'
@@ -244,7 +255,7 @@ export default function MarkdownEditor({
       {/* Editor/Preview */}
       <div className="flex-1 overflow-hidden">
         {viewMode === 'edit' ? (
-          <div ref={editorRef} className="h-full">
+          <div className="h-full">
             <MDEditor
               value={content}
               onChange={(val) => setContent(val || '')}
@@ -258,11 +269,15 @@ export default function MarkdownEditor({
             />
           </div>
         ) : (
-          <PreviewPane
-            content={content}
-            onScroll={setPreviewScrollPercentage}
-            scrollToPercentage={editorScrollPercentage}
-          />
+          <>
+            {isPreviewLoading ? (
+              <div className="flex items-center justify-center h-full">
+                <div className="text-gray-500">Loading preview...</div>
+              </div>
+            ) : (
+              <PreviewPane content={content} />
+            )}
+          </>
         )}
       </div>
     </div>

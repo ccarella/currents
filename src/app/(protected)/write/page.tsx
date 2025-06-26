@@ -1,6 +1,9 @@
 'use client';
 
-import MarkdownEditor from '@/components/MarkdownEditor';
+import MarkdownEditor, {
+  DRAFT_CONTENT_KEY,
+  DRAFT_TIMESTAMP_KEY,
+} from '@/components/MarkdownEditor';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createPost, updatePost, getPostById } from '@/lib/supabase/posts';
@@ -14,7 +17,6 @@ export default function WritePage() {
   const [content, setContent] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
   const [currentPostId, setCurrentPostId] = useState<string | null>(postId);
 
   // Load existing post if editing
@@ -49,7 +51,6 @@ export default function WritePage() {
     }
 
     setError(null);
-    setSuccess(null);
 
     try {
       if (currentPostId) {
@@ -70,20 +71,12 @@ export default function WritePage() {
           status: 'published',
         });
 
-        // Reset the form for a new post
-        setTitle('');
-        setContent('');
-        setCurrentPostId(null);
+        // Clear localStorage draft before redirecting
+        localStorage.removeItem(DRAFT_CONTENT_KEY);
+        localStorage.removeItem(DRAFT_TIMESTAMP_KEY);
 
-        // Clear localStorage draft
-        localStorage.removeItem('draft-content');
-        localStorage.removeItem('draft-timestamp');
-
-        // Show success message
-        setSuccess('Post published successfully! You can create another post.');
-
-        // Clear success message after 5 seconds
-        setTimeout(() => setSuccess(null), 5000);
+        // Redirect to homepage after successful save
+        router.push('/');
       }
     } catch (err) {
       console.error('Error saving post:', err);
@@ -130,11 +123,6 @@ export default function WritePage() {
           {error && (
             <div className="mb-2 p-2 bg-red-50 border border-red-200 text-red-700 rounded-md text-sm">
               {error}
-            </div>
-          )}
-          {success && (
-            <div className="mb-2 p-2 bg-green-50 border border-green-200 text-green-700 rounded-md text-sm">
-              {success}
             </div>
           )}
           <input

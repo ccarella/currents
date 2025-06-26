@@ -46,6 +46,8 @@ vi.mock('@/components/MarkdownEditor', () => ({
       </div>
     );
   },
+  DRAFT_CONTENT_KEY: 'draft-content',
+  DRAFT_TIMESTAMP_KEY: 'draft-timestamp',
 }));
 
 describe('WritePage', () => {
@@ -67,7 +69,7 @@ describe('WritePage', () => {
     } as any);
   });
 
-  it('should create a new post as published and reset form on save', async () => {
+  it('should create a new post as published and redirect to homepage on save', async () => {
     const mockPost = { id: '123', title: 'Test Post' };
     vi.mocked(createPost).mockResolvedValue(mockPost as any);
 
@@ -87,18 +89,7 @@ describe('WritePage', () => {
         content: 'Test content',
         status: 'published',
       });
-      // Should not redirect anymore
-      expect(mockPush).not.toHaveBeenCalled();
-      // Check that form is reset
-      expect(screen.getByPlaceholderText('Enter your title...')).toHaveValue(
-        ''
-      );
-      // Check success message
-      expect(
-        screen.getByText(
-          'Post published successfully! You can create another post.'
-        )
-      ).toBeInTheDocument();
+      expect(mockPush).toHaveBeenCalledWith('/');
     });
   });
 
