@@ -1,9 +1,9 @@
 'use client';
 
-import MarkdownEditor, {
+import PlainTextEditor, {
   DRAFT_CONTENT_KEY,
   DRAFT_TIMESTAMP_KEY,
-} from '@/components/MarkdownEditor';
+} from '@/components/PlainTextEditor';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -254,10 +254,9 @@ export default function WritePage() {
 
         {/* Editor */}
         <div className="flex-1 overflow-hidden">
-          <MarkdownEditor
+          <PlainTextEditor
             initialContent={content}
-            onSave={handlePublish}
-            placeholder="Start writing your story..."
+            placeholder="Start writing your story... (plain text only, no formatting)"
           />
         </div>
       </div>

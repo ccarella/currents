@@ -21,28 +21,17 @@ vi.mock('@/lib/supabase/posts', () => ({
   getUserCurrentPost: vi.fn(),
 }));
 
-// Mock the MarkdownEditor component
-vi.mock('@/components/MarkdownEditor', () => ({
-  default: ({
-    onSave,
-    placeholder,
-  }: {
-    onSave: (content: string) => void;
-    placeholder: string;
-  }) => (
+// Mock the PlainTextEditor component
+vi.mock('@/components/PlainTextEditor', () => ({
+  default: ({ placeholder }: { placeholder: string }) => (
     <div>
       <textarea
-        data-testid="markdown-editor"
+        data-testid="plain-text-editor"
         placeholder={placeholder}
         onChange={(e) => {
           localStorage.setItem('draft-content', e.target.value);
         }}
       />
-      <button
-        onClick={() => onSave(localStorage.getItem('draft-content') || '')}
-      >
-        Save
-      </button>
     </div>
   ),
   DRAFT_CONTENT_KEY: 'draft-content',
@@ -86,7 +75,7 @@ describe('WritePage', () => {
       screen.getByPlaceholderText('Enter your title...')
     ).toBeInTheDocument();
     expect(screen.getByText('Publish')).toBeInTheDocument();
-    expect(screen.getByTestId('markdown-editor')).toBeInTheDocument();
+    expect(screen.getByTestId('plain-text-editor')).toBeInTheDocument();
   });
 
   it('disables publish button when title is empty', () => {
@@ -140,7 +129,7 @@ describe('WritePage', () => {
     render(<WritePage />);
 
     const titleInput = screen.getByPlaceholderText('Enter your title...');
-    const editor = screen.getByTestId('markdown-editor');
+    const editor = screen.getByTestId('plain-text-editor');
     const publishButton = screen.getByText('Publish');
 
     fireEvent.change(titleInput, { target: { value: 'My New Post' } });
@@ -178,7 +167,7 @@ describe('WritePage', () => {
     render(<WritePage />);
 
     const titleInput = screen.getByPlaceholderText('Enter your title...');
-    const editor = screen.getByTestId('markdown-editor');
+    const editor = screen.getByTestId('plain-text-editor');
     const publishButton = screen.getByText('Publish');
 
     fireEvent.change(titleInput, { target: { value: 'My First Post' } });
@@ -227,7 +216,7 @@ describe('WritePage', () => {
     render(<WritePage />);
 
     const titleInput = screen.getByPlaceholderText('Enter your title...');
-    const editor = screen.getByTestId('markdown-editor');
+    const editor = screen.getByTestId('plain-text-editor');
     const publishButton = screen.getByText('Publish');
 
     fireEvent.change(titleInput, { target: { value: 'New Post' } });
@@ -272,7 +261,7 @@ describe('WritePage', () => {
     render(<WritePage />);
 
     const titleInput = screen.getByPlaceholderText('Enter your title...');
-    const editor = screen.getByTestId('markdown-editor');
+    const editor = screen.getByTestId('plain-text-editor');
     const publishButton = screen.getByText('Publish');
 
     fireEvent.change(titleInput, { target: { value: 'New Post' } });
@@ -323,7 +312,7 @@ describe('WritePage', () => {
     render(<WritePage />);
 
     const titleInput = screen.getByPlaceholderText('Enter your title...');
-    const editor = screen.getByTestId('markdown-editor');
+    const editor = screen.getByTestId('plain-text-editor');
     const publishButton = screen.getByText('Publish');
 
     fireEvent.change(titleInput, { target: { value: 'Test Post' } });
@@ -337,7 +326,7 @@ describe('WritePage', () => {
     });
 
     // Resolve the promise to complete the publish
-    resolvePublish!(newPost);
+    resolvePublish(newPost);
   });
 
   it('clears draft from localStorage after successful publish', async () => {
@@ -385,7 +374,7 @@ describe('WritePage', () => {
     render(<WritePage />);
 
     const titleInput = screen.getByPlaceholderText('Enter your title...');
-    const editor = screen.getByTestId('markdown-editor');
+    const editor = screen.getByTestId('plain-text-editor');
     const publishButton = screen.getByText('Publish');
 
     fireEvent.change(titleInput, { target: { value: 'Test Post' } });

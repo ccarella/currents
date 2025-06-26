@@ -3,24 +3,23 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import WritePage from './page';
 
-// Mock the MarkdownEditor component
-vi.mock('@/components/MarkdownEditor', () => ({
+// Mock the PlainTextEditor component
+vi.mock('@/components/PlainTextEditor', () => ({
   __esModule: true,
   default: ({
-    onSave,
     placeholder,
     initialContent,
   }: {
-    onSave?: (content: string) => void;
     placeholder?: string;
     initialContent?: string;
   }) => (
-    <div data-testid="markdown-editor">
-      <button onClick={() => onSave?.('test content')}>Save</button>
+    <div data-testid="plain-text-editor">
       <div>{placeholder}</div>
       <div>{initialContent}</div>
     </div>
   ),
+  DRAFT_CONTENT_KEY: 'draft-content',
+  DRAFT_TIMESTAMP_KEY: 'draft-timestamp',
 }));
 
 // Mock next/navigation
@@ -49,6 +48,7 @@ vi.mock('@/lib/supabase/posts', () => ({
     title: 'Test Post',
     content: 'Test content',
   }),
+  getUserCurrentPost: vi.fn().mockResolvedValue(null),
 }));
 
 describe('WritePage', () => {
@@ -56,6 +56,7 @@ describe('WritePage', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    localStorage.clear();
   });
 
   it('renders the write page with title input and editor', () => {
@@ -64,8 +65,12 @@ describe('WritePage', () => {
     expect(
       screen.getByPlaceholderText('Enter your title...')
     ).toBeInTheDocument();
-    expect(screen.getByTestId('markdown-editor')).toBeInTheDocument();
-    expect(screen.getByText('Start writing your story...')).toBeInTheDocument();
+    expect(screen.getByTestId('plain-text-editor')).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        'Start writing your story... (plain text only, no formatting)'
+      )
+    ).toBeInTheDocument();
   });
 
   it('updates title when typing', async () => {
@@ -77,26 +82,29 @@ describe('WritePage', () => {
     expect(titleInput).toHaveValue('My New Post');
   });
 
-  it('shows error when saving without title', async () => {
+  it('disables publish button when title is empty', () => {
     render(<WritePage />);
 
-    const saveButton = screen.getByText('Save');
-    await user.click(saveButton);
+    const publishButton = screen.getByText('Publish');
+    expect(publishButton).toBeDisabled();
 
-    await waitFor(() => {
-      expect(screen.getByText('Please enter a title')).toBeInTheDocument();
-    });
+    // Button should not be clickable when disabled
+    expect(publishButton).toHaveAttribute('disabled');
   });
 
-  it('creates new post on save', async () => {
+  it('creates new post on publish', async () => {
     const { createPost } = await import('@/lib/supabase/posts');
+
+    // Set up localStorage with content
+    localStorage.setItem('draft-content', 'test content');
+
     render(<WritePage />);
 
     const titleInput = screen.getByPlaceholderText('Enter your title...');
     await user.type(titleInput, 'Test Title');
 
-    const saveButton = screen.getByText('Save');
-    await user.click(saveButton);
+    const publishButton = screen.getByText('Publish');
+    await user.click(publishButton);
 
     await waitFor(() => {
       expect(createPost).toHaveBeenCalledWith({
