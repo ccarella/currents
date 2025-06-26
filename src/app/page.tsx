@@ -1,5 +1,15 @@
-import { PostList } from '@/components/post';
-import { PostsServiceProvider } from '@/lib/posts-context';
+'use client';
+
+import dynamic from 'next/dynamic';
+
+const PostFeed = dynamic(() => import('@/components/post/PostFeed'), {
+  ssr: false,
+  loading: () => (
+    <div className="flex justify-center items-center min-h-[400px]">
+      <div className="text-gray-500">Loading...</div>
+    </div>
+  ),
+});
 
 export default function Home() {
   return (
@@ -14,9 +24,7 @@ export default function Home() {
           </p>
         </header>
 
-        <PostsServiceProvider>
-          <PostList />
-        </PostsServiceProvider>
+        <PostFeed />
       </div>
     </div>
   );
