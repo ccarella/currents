@@ -137,18 +137,7 @@ export default function SignUpForm() {
       }
 
       if (authData.user) {
-        // Create the user profile
-        const { error: profileError } = await supabase.from('profiles').insert({
-          id: authData.user.id,
-          username: data.username,
-        });
-
-        if (profileError) {
-          console.error('Profile creation error:', profileError);
-          setServerError('Failed to create user profile. Please try again.');
-          return;
-        }
-
+        // Profile is created automatically by database trigger
         // Redirect to home page after successful signup
         router.push('/');
         router.refresh();
