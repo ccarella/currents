@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown, { Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Prism from 'prismjs';
 
@@ -22,6 +22,12 @@ interface PreviewPaneProps {
   content: string;
   onScroll?: (scrollPercentage: number) => void;
   scrollToPercentage?: number;
+}
+
+interface CodeProps extends React.HTMLAttributes<HTMLElement> {
+  inline?: boolean;
+  className?: string;
+  children?: React.ReactNode;
 }
 
 export default function PreviewPane({
@@ -54,6 +60,59 @@ export default function PreviewPane({
     }
   };
 
+  const components: Components = {
+    code({ inline, className, children, ...props }: CodeProps) {
+      const match = /language-(\w+)/.exec(className || '');
+      const language = match ? match[1] : '';
+
+      if (!inline && language) {
+        return (
+          <pre className={`language-${language}`}>
+            <code className={`language-${language}`} {...props}>
+              {String(children).replace(/\n$/, '')}
+            </code>
+          </pre>
+        );
+      }
+
+      return (
+        <code
+          className="px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-sm"
+          {...props}
+        >
+          {children}
+        </code>
+      );
+    },
+    pre({ children, ...props }) {
+      return (
+        <pre className="overflow-x-auto" {...props}>
+          {children}
+        </pre>
+      );
+    },
+    img({ src, alt, ...props }) {
+      return (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={src}
+          alt={alt}
+          className="max-w-full h-auto rounded-lg shadow-md"
+          {...props}
+        />
+      );
+    },
+    table({ children, ...props }) {
+      return (
+        <div className="overflow-x-auto">
+          <table className="min-w-full" {...props}>
+            {children}
+          </table>
+        </div>
+      );
+    },
+  };
+
   return (
     <div
       ref={previewRef}
@@ -61,71 +120,7 @@ export default function PreviewPane({
       className="h-full overflow-y-auto p-8 bg-white dark:bg-gray-900"
     >
       <div className="prose prose-slate dark:prose-invert max-w-none">
-        <ReactMarkdown
-          remarkPlugins={[remarkGfm]}
-          components={{
-            code({
-              inline,
-              className,
-              children,
-              ...props
-            }: {
-              inline?: boolean;
-              className?: string;
-              children?: React.ReactNode;
-              [key: string]: unknown;
-            }) {
-              const match = /language-(\w+)/.exec(className || '');
-              const language = match ? match[1] : '';
-
-              if (!inline && language) {
-                return (
-                  <pre className={`language-${language}`}>
-                    <code className={`language-${language}`} {...props}>
-                      {String(children).replace(/\n$/, '')}
-                    </code>
-                  </pre>
-                );
-              }
-
-              return (
-                <code
-                  className="px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-sm"
-                  {...props}
-                >
-                  {children}
-                </code>
-              );
-            },
-            pre({ children, ...props }) {
-              return (
-                <pre className="overflow-x-auto" {...props}>
-                  {children}
-                </pre>
-              );
-            },
-            img({ src, alt, ...props }) {
-              return (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={src}
-                  alt={alt}
-                  className="max-w-full h-auto rounded-lg shadow-md"
-                  {...props}
-                />
-              );
-            },
-            table({ children, ...props }) {
-              return (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full" {...props}>
-                    {children}
-                  </table>
-                </div>
-              );
-            },
-          }}
-        >
+        <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
           {content}
         </ReactMarkdown>
       </div>
