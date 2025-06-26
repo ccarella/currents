@@ -1,8 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { usePostsService } from '@/lib/posts-context';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import PostCard from './PostCard';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import type { Database } from '@/types/database.types';
 
 type PostWithProfile = Database['public']['Tables']['posts']['Row'] & {
@@ -18,15 +20,46 @@ export default function PostList() {
   const postsService = usePostsService();
   const [posts, setPosts] = useState<PostWithProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore) return;
+
+    try {
+      setLoadingMore(true);
+      setError(null);
+      const { posts: newPosts, hasMore: moreAvailable } =
+        await postsService.getActivePostsPaginated(page, 20);
+
+      if (page === 1) {
+        setPosts(newPosts as PostWithProfile[]);
+      } else {
+        setPosts((prev) => [...prev, ...(newPosts as PostWithProfile[])]);
+      }
+
+      setHasMore(moreAvailable);
+      setPage((prev) => prev + 1);
+    } catch (err) {
+      setError('Failed to load more posts');
+      console.error('Error loading more posts:', err);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [page, loadingMore, hasMore, postsService]);
 
   useEffect(() => {
-    const fetchPosts = async () => {
+    const fetchInitialPosts = async () => {
       try {
         setLoading(true);
         setError(null);
-        const data = await postsService.getActivePosts();
-        setPosts(data as PostWithProfile[]);
+        const { posts: initialPosts, hasMore: moreAvailable } =
+          await postsService.getActivePostsPaginated(1, 20);
+        setPosts(initialPosts as PostWithProfile[]);
+        setHasMore(moreAvailable);
+        setPage(2);
       } catch (err) {
         setError('Something went wrong');
         console.error('Error fetching posts:', err);
@@ -35,8 +68,10 @@ export default function PostList() {
       }
     };
 
-    fetchPosts();
+    fetchInitialPosts();
   }, [postsService]);
+
+  useInfiniteScroll(loadMore);
 
   if (loading) {
     return (
@@ -93,6 +128,14 @@ export default function PostList() {
       {posts.map((post) => (
         <PostCard key={post.id} post={post} />
       ))}
+
+      {loadingMore && <LoadingSpinner />}
+
+      {!hasMore && posts.length > 0 && (
+        <div className="text-center py-8 text-gray-500">
+          No more posts to load
+        </div>
+      )}
     </div>
   );
 }

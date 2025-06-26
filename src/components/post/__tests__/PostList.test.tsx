@@ -10,14 +10,21 @@ vi.mock('@/lib/supabase/client', () => ({
   createClient: vi.fn(() => ({})),
 }));
 
+// Mock the useInfiniteScroll hook
+vi.mock('@/hooks/useInfiniteScroll', () => ({
+  useInfiniteScroll: vi.fn(),
+}));
+
 describe('PostList', () => {
   let mockPostsService: {
     getActivePosts: ReturnType<typeof vi.fn>;
+    getActivePostsPaginated: ReturnType<typeof vi.fn>;
   };
 
   beforeEach(() => {
     mockPostsService = {
       getActivePosts: vi.fn(),
+      getActivePostsPaginated: vi.fn(),
     };
     vi.mocked(PostsService).mockImplementation(
       () => mockPostsService as unknown as PostsService
@@ -25,7 +32,11 @@ describe('PostList', () => {
   });
 
   it('should display empty state when there are no posts', async () => {
-    mockPostsService.getActivePosts.mockResolvedValue([]);
+    mockPostsService.getActivePostsPaginated.mockResolvedValue({
+      posts: [],
+      totalCount: 0,
+      hasMore: false,
+    });
 
     render(
       <PostsServiceProvider>
@@ -47,7 +58,7 @@ describe('PostList', () => {
         title: 'Test Post',
         content: 'Test content',
         slug: 'test-post',
-        author_id: 'user1',
+        user_id: 'user1',
         status: 'published',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
@@ -60,7 +71,11 @@ describe('PostList', () => {
       },
     ];
 
-    mockPostsService.getActivePosts.mockResolvedValue(mockPosts);
+    mockPostsService.getActivePostsPaginated.mockResolvedValue({
+      posts: mockPosts,
+      totalCount: 1,
+      hasMore: false,
+    });
 
     render(
       <PostsServiceProvider>
@@ -78,7 +93,9 @@ describe('PostList', () => {
   });
 
   it('should display loading state while fetching posts', () => {
-    mockPostsService.getActivePosts.mockReturnValue(new Promise(() => {}));
+    mockPostsService.getActivePostsPaginated.mockReturnValue(
+      new Promise(() => {})
+    );
 
     render(
       <PostsServiceProvider>
@@ -90,7 +107,7 @@ describe('PostList', () => {
   });
 
   it('should handle error state gracefully', async () => {
-    mockPostsService.getActivePosts.mockRejectedValue(
+    mockPostsService.getActivePostsPaginated.mockRejectedValue(
       new Error('Failed to fetch')
     );
 
@@ -105,5 +122,84 @@ describe('PostList', () => {
     });
 
     expect(screen.queryByText(/error.*fetch/i)).not.toBeInTheDocument();
+  });
+
+  it('should display "no more posts" message when all posts are loaded', async () => {
+    const mockPosts = [
+      {
+        id: '1',
+        title: 'Test Post',
+        content: 'Test content',
+        slug: 'test-post',
+        user_id: 'user1',
+        status: 'published',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        profiles: {
+          id: 'user1',
+          username: 'testuser',
+          full_name: 'Test User',
+          avatar_url: null,
+        },
+      },
+    ];
+
+    mockPostsService.getActivePostsPaginated.mockResolvedValue({
+      posts: mockPosts,
+      totalCount: 1,
+      hasMore: false,
+    });
+
+    render(
+      <PostsServiceProvider>
+        <PostList />
+      </PostsServiceProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('No more posts to load')).toBeInTheDocument();
+    });
+  });
+
+  it('should paginate correctly when hasMore is true', async () => {
+    const firstBatch = [
+      {
+        id: '1',
+        title: 'Test Post 1',
+        content: 'Test content 1',
+        slug: 'test-post-1',
+        user_id: 'user1',
+        status: 'published',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        profiles: {
+          id: 'user1',
+          username: 'testuser1',
+          full_name: 'Test User 1',
+          avatar_url: null,
+        },
+      },
+    ];
+
+    mockPostsService.getActivePostsPaginated.mockResolvedValue({
+      posts: firstBatch,
+      totalCount: 25,
+      hasMore: true,
+    });
+
+    render(
+      <PostsServiceProvider>
+        <PostList />
+      </PostsServiceProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Test Post 1')).toBeInTheDocument();
+    });
+
+    expect(mockPostsService.getActivePostsPaginated).toHaveBeenCalledWith(
+      1,
+      20
+    );
   });
 });
