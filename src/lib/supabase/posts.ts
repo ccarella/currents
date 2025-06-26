@@ -54,6 +54,10 @@ export async function createPost(data: {
     excerpt,
     author_id: user.user.id,
     status: data.status || 'draft',
+    // Set published_at if status is published
+    ...(data.status === 'published' && {
+      published_at: new Date().toISOString(),
+    }),
   };
 
   const { data: post, error } = await supabase
@@ -88,6 +92,11 @@ export async function updatePost(
     updateData.excerpt =
       data.content.substring(0, 160).trim() +
       (data.content.length > 160 ? '...' : '');
+  }
+
+  // Set published_at if status is being changed to published
+  if (data.status === 'published') {
+    updateData.published_at = new Date().toISOString();
   }
 
   const { data: post, error } = await supabase

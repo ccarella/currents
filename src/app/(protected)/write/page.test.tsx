@@ -25,9 +25,10 @@ vi.mock('@/components/MarkdownEditor', () => ({
 
 // Mock next/navigation
 const mockReplace = vi.fn();
+const mockPush = vi.fn();
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
-    push: vi.fn(),
+    push: mockPush,
     back: vi.fn(),
     forward: vi.fn(),
     refresh: vi.fn(),
@@ -101,9 +102,9 @@ describe('WritePage', () => {
       expect(createPost).toHaveBeenCalledWith({
         title: 'Test Title',
         content: 'test content',
-        status: 'draft',
+        status: 'published',
       });
-      expect(mockReplace).toHaveBeenCalledWith('/write?id=new-post-id');
+      expect(mockPush).toHaveBeenCalledWith('/');
     });
   });
 

@@ -51,22 +51,25 @@ export default function WritePage() {
 
     try {
       if (currentPostId) {
-        // Update existing post
+        // Update existing post and publish it
         await updatePost(currentPostId, {
           title,
           content: editorContent,
+          status: 'published',
         });
+
+        // Redirect to homepage after successful save
+        router.push('/');
       } else {
-        // Create new post
-        const post = await createPost({
+        // Create new post as published
+        await createPost({
           title,
           content: editorContent,
-          status: 'draft',
+          status: 'published',
         });
-        setCurrentPostId(post.id);
 
-        // Update URL to include the post ID for future saves
-        router.replace(`/write?id=${post.id}`);
+        // Redirect to homepage after successful save
+        router.push('/');
       }
     } catch (err) {
       console.error('Error saving post:', err);
