@@ -21,15 +21,20 @@ interface PostViewProps {
 
 export default function PostView({ post }: PostViewProps) {
   const [isOwner, setIsOwner] = useState(false);
+  const [isCheckingOwnership, setIsCheckingOwnership] = useState(true);
   const supabase = createClient();
 
   useEffect(() => {
     async function checkOwnership() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user && user.id === post.author_id) {
-        setIsOwner(true);
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user && user.id === post.author_id) {
+          setIsOwner(true);
+        }
+      } finally {
+        setIsCheckingOwnership(false);
       }
     }
     checkOwnership();
@@ -70,7 +75,7 @@ export default function PostView({ post }: PostViewProps) {
                 },
               }}
             />
-            {isOwner && (
+            {!isCheckingOwnership && isOwner && (
               <Link
                 href={`/write?id=${post.id}`}
                 className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
