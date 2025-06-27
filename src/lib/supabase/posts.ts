@@ -87,6 +87,11 @@ export async function updatePost(
     updated_at: new Date().toISOString(),
   };
 
+  // Update slug if title is provided
+  if (data.title) {
+    updateData.slug = generateSlug(data.title);
+  }
+
   // Update excerpt if content is provided
   if (data.content) {
     updateData.excerpt =
@@ -96,7 +101,17 @@ export async function updatePost(
 
   // Set published_at if status is being changed to published
   if (data.status === 'published') {
-    updateData.published_at = new Date().toISOString();
+    // First check if post is already published to preserve original timestamp
+    const { data: existingPost } = await supabase
+      .from('posts')
+      .select('status, published_at')
+      .eq('id', id)
+      .single();
+
+    // Only update published_at if status is changing from non-published to published
+    if (existingPost && existingPost.status !== 'published') {
+      updateData.published_at = new Date().toISOString();
+    }
   }
 
   const { data: post, error } = await supabase

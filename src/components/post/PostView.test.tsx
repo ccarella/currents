@@ -123,13 +123,13 @@ describe('PostView', () => {
     );
   });
 
-  it('shows edit button for post owner', async () => {
+  it('shows edit button for post owner with post ID', async () => {
     render(<PostView post={mockPost} profile={mockProfile} />);
 
     await waitFor(() => {
       const editLink = screen.getByTestId('edit-link');
       expect(editLink).toBeInTheDocument();
-      expect(editLink).toHaveAttribute('href', '/write');
+      expect(editLink).toHaveAttribute('href', '/write?id=456');
       expect(screen.getByText('Edit')).toBeInTheDocument();
     });
   });
