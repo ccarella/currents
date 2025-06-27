@@ -1,6 +1,6 @@
 'use client';
 
-import { Database } from '@/lib/supabase/database.types';
+import { Database } from '@/types/database.generated';
 import PostView from '@/components/post/PostView';
 import { PostgrestError } from '@supabase/supabase-js';
 
@@ -32,7 +32,7 @@ export default function UserProfilePage({
             {profile.avatar_url && (
               <img
                 src={profile.avatar_url}
-                alt={profile.full_name || profile.username}
+                alt={profile.full_name || profile.username || ''}
                 className="w-16 h-16 rounded-full"
                 loading="lazy"
               />

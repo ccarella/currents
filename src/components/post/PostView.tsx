@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { format } from 'date-fns';
-import { Database } from '@/lib/supabase/database.types';
+import { Database } from '@/types/database.generated';
 import ShareButton from '@/components/ui/ShareButton';
 import { PencilIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
@@ -48,7 +48,7 @@ export default function PostView({ post }: PostViewProps) {
             {post.profiles.avatar_url && (
               <img
                 src={post.profiles.avatar_url}
-                alt={post.profiles.full_name || post.profiles.username}
+                alt={post.profiles.full_name || post.profiles.username || ''}
                 className="w-10 h-10 rounded-full"
                 loading="lazy"
               />

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import UserProfilePage from './UserProfilePage';
-import { Database } from '@/lib/supabase/database.types';
+import { Database } from '@/types/database.generated';
 import { PostgrestError } from '@supabase/supabase-js';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
