@@ -67,6 +67,7 @@ export default function WritePage() {
     title: string;
   } | null>(null);
   const [pendingContent, setPendingContent] = useState<string>('');
+  const [isEditMode, setIsEditMode] = useState(false);
 
   // Track component mount state to prevent memory leaks
   const isMountedRef = useRef(true);
@@ -83,6 +84,12 @@ export default function WritePage() {
             setTitle(post.title);
             setContent(post.content || '');
             setCurrentPostId(post.id);
+            setIsEditMode(true);
+            // Clear any existing draft when editing
+            if (typeof window !== 'undefined') {
+              localStorage.removeItem(DRAFT_CONTENT_KEY);
+              localStorage.removeItem(DRAFT_TIMESTAMP_KEY);
+            }
           }
         })
         .catch((err) => {
@@ -172,22 +179,28 @@ export default function WritePage() {
       setPendingContent(editorContent);
 
       try {
-        // Check if user has an existing published post
-        const currentPost = await getUserCurrentPost();
-
-        if (isMountedRef.current) {
-          if (
-            currentPost &&
-            (!currentPostId || currentPostId !== currentPost.id)
-          ) {
-            // User has an existing post that's not the one being edited
-            setExistingPost({ id: currentPost.id, title: currentPost.title });
-            setShowReplaceDialog(true);
-            return;
-          }
-
-          // No existing post or editing the same post, proceed with publish
+        // Skip confirmation dialog when updating existing post
+        if (isEditMode && currentPostId) {
+          // Directly update the existing post
           await publishPost(editorContent);
+        } else {
+          // Check if user has an existing published post
+          const currentPost = await getUserCurrentPost();
+
+          if (isMountedRef.current) {
+            if (
+              currentPost &&
+              (!currentPostId || currentPostId !== currentPost.id)
+            ) {
+              // User has an existing post that's not the one being edited
+              setExistingPost({ id: currentPost.id, title: currentPost.title });
+              setShowReplaceDialog(true);
+              return;
+            }
+
+            // No existing post or editing the same post, proceed with publish
+            await publishPost(editorContent);
+          }
         }
       } catch (err) {
         if (isMountedRef.current) {
@@ -196,7 +209,7 @@ export default function WritePage() {
         }
       }
     },
-    [title, currentPostId, publishPost]
+    [title, currentPostId, publishPost, isEditMode]
   );
 
   const handleReplace = useCallback(async () => {
@@ -244,9 +257,17 @@ export default function WritePage() {
                 }}
                 disabled={!title.trim() || isPublishing}
                 className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
-                aria-label={isPublishing ? 'Publishing...' : 'Publish post'}
+                aria-label={
+                  isPublishing
+                    ? isEditMode
+                      ? 'Updating...'
+                      : 'Publishing...'
+                    : isEditMode
+                      ? 'Update post'
+                      : 'Publish post'
+                }
               >
-                Publish
+                {isEditMode ? 'Update Post' : 'Publish'}
               </button>
             </div>
           </div>
@@ -305,7 +326,12 @@ export default function WritePage() {
       </Dialog>
 
       {/* Loading Overlay */}
-      <LoadingOverlay show={isPublishing} message="Publishing your post..." />
+      <LoadingOverlay
+        show={isPublishing}
+        message={
+          isEditMode ? 'Updating your post...' : 'Publishing your post...'
+        }
+      />
     </>
   );
 }

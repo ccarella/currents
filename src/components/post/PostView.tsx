@@ -68,7 +68,7 @@ export default function PostView({ post }: PostViewProps) {
             />
             {isOwner && (
               <Link
-                href="/write"
+                href={`/write?id=${post.id}`}
                 className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
               >
                 <PencilIcon className="w-4 h-4 mr-1.5" />
