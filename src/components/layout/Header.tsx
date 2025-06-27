@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { Button } from '@/components/ui/Button';
 import { SignOutButton } from '@/components/auth';
+import { UserMenu } from '@/components/layout';
 import { useState } from 'react';
 import { Menu, X } from 'lucide-react';
 
@@ -14,7 +15,6 @@ export default function Header() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const loading = authLoading || profileLoading;
-  const profileUrl = profile?.username ? `/${profile.username}` : '/profile';
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -64,41 +64,7 @@ export default function Header() {
                     Create Post
                   </Button>
                 </Link>
-                <div className="relative group">
-                  <button
-                    className="flex h-9 w-9 items-center justify-center rounded-full bg-gray-200 text-sm font-medium text-gray-700 transition-all hover:bg-gray-300 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700"
-                    aria-label="User menu"
-                  >
-                    {user.email?.[0]?.toUpperCase() || 'U'}
-                  </button>
-                  {/* Dropdown Menu */}
-                  <div className="absolute right-0 mt-2 w-48 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right">
-                    <div className="rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 dark:bg-gray-900 dark:ring-gray-800">
-                      <Link
-                        href="/dashboard"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
-                      >
-                        Dashboard
-                      </Link>
-                      <Link
-                        href={profileUrl}
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
-                      >
-                        Profile
-                      </Link>
-                      <Link
-                        href="/settings"
-                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
-                      >
-                        Settings
-                      </Link>
-                      <hr className="my-1 border-gray-200 dark:border-gray-800" />
-                      <div className="px-4 py-2">
-                        <SignOutButton />
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <UserMenu />
               </div>
             ) : (
               <div className="flex items-center space-x-3">
@@ -175,7 +141,9 @@ export default function Header() {
                       Dashboard
                     </Link>
                     <Link
-                      href={profileUrl}
+                      href={
+                        profile?.username ? `/${profile.username}` : '/profile'
+                      }
                       className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
                       onClick={() => setIsMobileMenuOpen(false)}
                     >

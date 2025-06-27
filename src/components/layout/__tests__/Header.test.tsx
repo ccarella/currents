@@ -1,10 +1,14 @@
+import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { vi } from 'vitest';
 import Header from '../Header';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserProfile } from '@/hooks/useUserProfile';
 
 // Mock the useAuth hook
 vi.mock('@/hooks/useAuth');
+
+// Mock the useUserProfile hook
+vi.mock('@/hooks/useUserProfile');
 
 // Mock next/navigation
 vi.mock('next/navigation', () => ({
@@ -19,9 +23,18 @@ vi.mock('next/navigation', () => ({
 
 describe('Header', () => {
   const mockUseAuth = useAuth as vi.MockedFunction<typeof useAuth>;
+  const mockUseUserProfile = useUserProfile as vi.MockedFunction<
+    typeof useUserProfile
+  >;
 
   beforeEach(() => {
     vi.clearAllMocks();
+    // Default mock for useUserProfile
+    mockUseUserProfile.mockReturnValue({
+      profile: null,
+      loading: false,
+      error: null,
+    });
   });
 
   describe('Desktop Navigation', () => {
@@ -72,7 +85,7 @@ describe('Header', () => {
       render(<Header />);
 
       expect(screen.getByText('Create Post')).toBeInTheDocument();
-      expect(screen.getByText('T')).toBeInTheDocument(); // First letter of email
+      expect(screen.getByText('@test')).toBeInTheDocument(); // Username from UserMenu
       expect(screen.queryByText('Sign In')).not.toBeInTheDocument();
     });
 
@@ -160,7 +173,7 @@ describe('Header', () => {
   });
 
   describe('User Menu Dropdown', () => {
-    it('shows dropdown menu items on hover', async () => {
+    it('shows dropdown menu items on click', async () => {
       mockUseAuth.mockReturnValue({
         user: { id: '1', email: 'test@example.com' },
         loading: false,
@@ -173,16 +186,13 @@ describe('Header', () => {
 
       const userButton = screen.getByLabelText('User menu');
 
-      // Simulate hover
-      const parentElement = userButton.parentElement;
-      if (parentElement) {
-        fireEvent.mouseEnter(parentElement);
-      }
+      // Click to open dropdown
+      fireEvent.click(userButton);
 
       await waitFor(() => {
-        expect(screen.getByText('Dashboard')).toBeInTheDocument();
-        expect(screen.getByText('Profile')).toBeInTheDocument();
+        expect(screen.getByText('View Profile')).toBeInTheDocument();
         expect(screen.getByText('Settings')).toBeInTheDocument();
+        expect(screen.getByText('Sign Out')).toBeInTheDocument();
       });
     });
   });
