@@ -4,6 +4,7 @@ import './globals.css';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { AuthProvider } from '@/lib/AuthContext';
+import { ThemeProvider } from '@/components/theme/ThemeProvider';
 
 // Optimize font loading with subset and display swap
 const inter = Inter({
@@ -43,7 +44,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${spectral.variable} ${jetbrainsMono.variable}`}
+      className={`light ${inter.variable} ${spectral.variable} ${jetbrainsMono.variable}`}
     >
       <head>
         <link
@@ -56,13 +57,28 @@ export default function RootLayout({
           href="https://fonts.gstatic.com"
           crossOrigin="anonymous"
         />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Prevent flash of unstyled content by setting light mode immediately
+              // This runs before React hydration to ensure consistent theming
+              (function() {
+                const root = document.documentElement;
+                root.classList.remove('dark');
+                root.classList.add('light');
+              })();
+            `.trim(),
+          }}
+        />
       </head>
       <body className="font-serif antialiased flex flex-col min-h-screen">
-        <AuthProvider>
-          <Header />
-          <main className="flex-1">{children}</main>
-          <Footer />
-        </AuthProvider>
+        <ThemeProvider>
+          <AuthProvider>
+            <Header />
+            <main className="flex-1">{children}</main>
+            <Footer />
+          </AuthProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
