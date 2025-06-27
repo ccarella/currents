@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
+import Link from 'next/link';
 import { usePostsService } from '@/lib/posts-context';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import PostCard from './PostCard';
@@ -113,12 +114,12 @@ export default function PostList() {
         <p className="text-gray-600 dark:text-gray-400 mb-4">
           Be the first to share something with the community!
         </p>
-        <a
+        <Link
           href="/write"
           className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
         >
           Create your first post
-        </a>
+        </Link>
       </div>
     );
   }
