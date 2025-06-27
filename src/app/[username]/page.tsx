@@ -7,12 +7,20 @@ export async function generateMetadata({
 }: {
   params: Promise<{ username: string }>;
 }) {
-  const { username } = await params;
+  try {
+    const { username } = await params;
 
-  return {
-    title: `${username} - Currents`,
-    description: `Read ${username}'s current post on Currents`,
-  };
+    return {
+      title: `${username} - Currents`,
+      description: `Read ${username}'s current post on Currents`,
+    };
+  } catch (error) {
+    console.error('Error in generateMetadata:', error);
+    return {
+      title: 'Currents',
+      description: 'Read posts on Currents',
+    };
+  }
 }
 
 export default async function ProfilePage({
