@@ -66,7 +66,7 @@ export default function PostView({ post }: PostViewProps) {
                 id: post.id,
                 title: post.title,
                 user: {
-                  username: post.profiles.username,
+                  username: post.profiles.username || 'anonymous',
                 },
               }}
             />
