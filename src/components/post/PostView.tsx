@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { format } from 'date-fns';
 import { Database } from '@/types/database.generated';
-import ShareButton from '@/components/ui/ShareButton';
+import { ShareButton } from '@/components/post/ShareButton';
 import { PencilIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
@@ -62,9 +62,13 @@ export default function PostView({ post }: PostViewProps) {
           </div>
           <div className="flex items-center space-x-2">
             <ShareButton
-              url={`/${post.profiles.username}`}
-              title={post.title || `Post by ${post.profiles.username}`}
-              text={post.excerpt || 'Check out this post on Currents'}
+              post={{
+                id: post.id,
+                title: post.title,
+                user: {
+                  username: post.profiles.username || 'anonymous',
+                },
+              }}
             />
             {isOwner && (
               <Link
