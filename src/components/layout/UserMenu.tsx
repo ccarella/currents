@@ -17,17 +17,16 @@ export function UserMenu() {
   const buttonRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
+    if (!open) return;
+
     function handleClickOutside(event: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         handleClose();
       }
     }
 
-    if (open) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () =>
-        document.removeEventListener('mousedown', handleClickOutside);
-    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [open]);
 
   const handleKeyDown = useCallback(
@@ -42,35 +41,38 @@ export function UserMenu() {
           break;
         case 'ArrowDown':
           event.preventDefault();
-          setFocusedIndex((prev) => (prev < 2 ? prev + 1 : 0));
+          setFocusedIndex((prev) => (prev < 1 ? prev + 1 : 0));
           break;
         case 'ArrowUp':
           event.preventDefault();
-          setFocusedIndex((prev) => (prev > 0 ? prev - 1 : 2));
+          setFocusedIndex((prev) => (prev > 0 ? prev - 1 : 1));
           break;
         case 'Enter':
         case ' ':
-          if (focusedIndex >= 0) {
-            event.preventDefault();
+          event.preventDefault();
+          // Use the current focused index from state via closure
+          setFocusedIndex((currentIndex) => {
             const links = menuRef.current?.querySelectorAll('a, button');
-            if (links && links[focusedIndex]) {
-              (links[focusedIndex] as HTMLElement).click();
+            if (links && currentIndex >= 0 && links[currentIndex]) {
+              (links[currentIndex] as HTMLElement).click();
             }
-          }
+            return currentIndex;
+          });
           break;
       }
     },
-    [open, focusedIndex]
+    [open]
   );
 
   useEffect(() => {
-    if (open) {
-      document.addEventListener('keydown', handleKeyDown);
-      setFocusedIndex(0);
-      return () => document.removeEventListener('keydown', handleKeyDown);
-    } else {
+    if (!open) {
       setFocusedIndex(-1);
+      return;
     }
+
+    document.addEventListener('keydown', handleKeyDown);
+    setFocusedIndex(0);
+    return () => document.removeEventListener('keydown', handleKeyDown);
   }, [open, handleKeyDown]);
 
   const handleClose = () => {
@@ -99,7 +101,16 @@ export function UserMenu() {
       index === 1
         ? 'text-gray-500 dark:text-gray-500'
         : 'text-gray-700 dark:text-gray-300';
-    return `${baseClass} ${textClass} ${hoverClass} ${focusClass}`;
+
+    const classes = [baseClass, textClass];
+    if (focusedIndex !== index) {
+      classes.push(hoverClass);
+    }
+    if (focusClass) {
+      classes.push(focusClass);
+    }
+
+    return classes.join(' ');
   };
 
   if (!user) return null;

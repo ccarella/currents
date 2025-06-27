@@ -233,20 +233,45 @@ describe('UserMenu', () => {
     await userEvent.click(button);
 
     const viewProfile = screen.getByText('View Profile');
-    const settings = screen.getByText('Settings');
 
     // First item should be focused by default when dropdown opens
-    expect(viewProfile.className).toMatch(/bg-gray-100/);
+    expect(viewProfile.className.split(' ')).toContain('bg-gray-100');
+    expect(viewProfile.className.split(' ')).not.toContain('hover:bg-gray-100');
 
     await userEvent.keyboard('{ArrowDown}');
+
+    // Small delay to ensure state update
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    // Re-query elements
+    const viewProfileAfter = screen.getByText('View Profile');
+    const settingsAfter = screen.getByText('Settings');
+
     // Now settings should be focused
-    expect(settings.className).toMatch(/bg-gray-100/);
-    expect(viewProfile.className).not.toMatch(/bg-gray-100/);
+    expect(settingsAfter.className.split(' ')).toContain('bg-gray-100');
+    expect(settingsAfter.className.split(' ')).not.toContain(
+      'hover:bg-gray-100'
+    );
+    expect(viewProfileAfter.className.split(' ')).not.toContain('bg-gray-100');
+    expect(viewProfileAfter.className.split(' ')).toContain(
+      'hover:bg-gray-100'
+    );
 
     await userEvent.keyboard('{ArrowUp}');
+
+    // Small delay to ensure state update
+    await new Promise((resolve) => setTimeout(resolve, 50));
+
+    const viewProfileFinal = screen.getByText('View Profile');
+    const settingsFinal = screen.getByText('Settings');
+
     // Back to viewProfile
-    expect(viewProfile.className).toMatch(/bg-gray-100/);
-    expect(settings.className).not.toMatch(/bg-gray-100/);
+    expect(viewProfileFinal.className.split(' ')).toContain('bg-gray-100');
+    expect(viewProfileFinal.className.split(' ')).not.toContain(
+      'hover:bg-gray-100'
+    );
+    expect(settingsFinal.className.split(' ')).not.toContain('bg-gray-100');
+    expect(settingsFinal.className.split(' ')).toContain('hover:bg-gray-100');
   });
 
   it('uses correct profile URL when username is available', () => {
