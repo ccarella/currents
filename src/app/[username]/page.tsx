@@ -2,6 +2,9 @@ import { notFound } from 'next/navigation';
 import UserProfilePage from '@/components/profile/UserProfilePage';
 import { createClient } from '@/lib/supabase/server';
 
+// Force dynamic rendering for this page
+export const dynamic = 'force-dynamic';
+
 export async function generateMetadata({
   params,
 }: {
