@@ -57,6 +57,19 @@ export default function RootLayout({
           href="https://fonts.gstatic.com"
           crossOrigin="anonymous"
         />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Prevent flash of unstyled content by setting light mode immediately
+              // This runs before React hydration to ensure consistent theming
+              (function() {
+                const root = document.documentElement;
+                root.classList.remove('dark');
+                root.classList.add('light');
+              })();
+            `.trim(),
+          }}
+        />
       </head>
       <body className="font-serif antialiased flex flex-col min-h-screen">
         <ThemeProvider>

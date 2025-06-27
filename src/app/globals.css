@@ -62,31 +62,44 @@
   --ring: #0ea5e9;
 }
 
-/* Dark mode removed - app always uses light mode */
+/* 
+ * Light Mode Enforcement
+ * 
+ * This application is designed to always use light mode for consistency
+ * and brand requirements. While we understand some users prefer dark mode
+ * for accessibility reasons, this decision was made to ensure a consistent
+ * user experience across all contexts.
+ * 
+ * Future considerations: We may explore adding user-controlled theme
+ * preferences in a future update.
+ */
 
-/* Ensure light mode is always active */
-html,
-html.light {
-  --background: #ffffff !important;
-  --foreground: #111827 !important;
-  --muted: #f9fafb !important;
-  --muted-foreground: #6b7280 !important;
-  --accent: #f3f4f6 !important;
-  --accent-foreground: #111827 !important;
-  --border: #e5e7eb !important;
-  --ring: #0ea5e9 !important;
+/* Ensure light mode CSS variables are always active */
+/* Using attribute selector for higher specificity without !important */
+html[class*="light"],
+html:not([class*="dark"]) {
+  --background: #ffffff;
+  --foreground: #111827;
+  --muted: #f9fafb;
+  --muted-foreground: #6b7280;
+  --accent: #f3f4f6;
+  --accent-foreground: #111827;
+  --border: #e5e7eb;
+  --ring: #0ea5e9;
 }
 
-/* Prevent dark mode from ever being applied */
-html.dark {
-  --background: #ffffff !important;
-  --foreground: #111827 !important;
-  --muted: #f9fafb !important;
-  --muted-foreground: #6b7280 !important;
-  --accent: #f3f4f6 !important;
-  --accent-foreground: #111827 !important;
-  --border: #e5e7eb !important;
-  --ring: #0ea5e9 !important;
+/* Override dark mode if it's ever applied */
+/* Double selector for increased specificity */
+html.dark,
+html[class*="dark"] {
+  --background: #ffffff;
+  --foreground: #111827;
+  --muted: #f9fafb;
+  --muted-foreground: #6b7280;
+  --accent: #f3f4f6;
+  --accent-foreground: #111827;
+  --border: #e5e7eb;
+  --ring: #0ea5e9;
 }
 
 /* Base styles */
