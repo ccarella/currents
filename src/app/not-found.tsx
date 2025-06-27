@@ -17,12 +17,12 @@ export default function NotFound() {
         </div>
         <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
           <Link href="/">
-            <Button variant="primary" size="medium">
+            <Button variant="primary" size="md">
               Return Home
             </Button>
           </Link>
           <Link href="/write">
-            <Button variant="secondary" size="medium">
+            <Button variant="secondary" size="md">
               Share a Thought
             </Button>
           </Link>

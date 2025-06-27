@@ -38,7 +38,7 @@ export default function Error({
           )}
         </div>
         <div className="pt-4">
-          <Button variant="primary" size="medium" onClick={reset}>
+          <Button variant="primary" size="md" onClick={reset}>
             Try Again
           </Button>
         </div>
