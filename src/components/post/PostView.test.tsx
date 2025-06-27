@@ -152,10 +152,7 @@ describe('PostView', () => {
     render(<PostView post={mockPost} profile={mockProfile} />);
 
     const shareButton = screen.getByTestId('share-button');
-    expect(shareButton).toHaveAttribute(
-      'data-url',
-      'http://localhost:3000/testuser'
-    );
+    expect(shareButton).toHaveAttribute('data-url', '/testuser');
     expect(shareButton).toHaveAttribute('data-title', 'Test Post Title');
   });
 

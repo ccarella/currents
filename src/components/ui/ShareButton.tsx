@@ -13,30 +13,35 @@ export default function ShareButton({ url, title, text }: ShareButtonProps) {
   const [copied, setCopied] = useState(false);
 
   const handleShare = async () => {
+    // Convert relative URL to absolute URL
+    const absoluteUrl = url.startsWith('http')
+      ? url
+      : `${typeof window !== 'undefined' ? window.location.origin : ''}${url}`;
+
     // Check if the Web Share API is available
     if (navigator.share) {
       try {
         await navigator.share({
           title: title || 'Share',
           text: text || '',
-          url: url,
+          url: absoluteUrl,
         });
       } catch (error) {
         // User cancelled or error occurred
         if (error instanceof Error && error.name !== 'AbortError') {
           console.error('Error sharing:', error);
-          fallbackCopy();
+          fallbackCopy(absoluteUrl);
         }
       }
     } else {
       // Fallback to copying to clipboard
-      fallbackCopy();
+      fallbackCopy(absoluteUrl);
     }
   };
 
-  const fallbackCopy = () => {
+  const fallbackCopy = (urlToCopy: string) => {
     navigator.clipboard
-      .writeText(url)
+      .writeText(urlToCopy)
       .then(() => {
         setCopied(true);
         setTimeout(() => setCopied(false), 2000);

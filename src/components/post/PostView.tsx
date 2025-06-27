@@ -62,7 +62,7 @@ export default function PostView({ post }: PostViewProps) {
           </div>
           <div className="flex items-center space-x-2">
             <ShareButton
-              url={`${window.location.origin}/${post.profiles.username}`}
+              url={`/${post.profiles.username}`}
               title={post.title || `Post by ${post.profiles.username}`}
               text={post.excerpt || 'Check out this post on Currents'}
             />
