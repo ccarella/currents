@@ -33,6 +33,13 @@ export default async function ProfilePage({
 }) {
   try {
     const { username } = await params;
+
+    // Validate username
+    if (!username || typeof username !== 'string') {
+      console.error('Invalid username parameter:', username);
+      notFound();
+    }
+
     const supabase = await createClient();
 
     // Get the user's profile by username
@@ -43,6 +50,7 @@ export default async function ProfilePage({
       .single();
 
     if (profileError || !profile) {
+      console.error('Profile not found:', { username, error: profileError });
       notFound();
     }
 
@@ -71,6 +79,15 @@ export default async function ProfilePage({
     );
   } catch (error) {
     console.error('Error in ProfilePage:', error);
+    // Check if it's a Supabase initialization error
+    if (
+      error instanceof Error &&
+      error.message.includes('Missing Supabase environment variables')
+    ) {
+      console.error(
+        'Supabase configuration error - check environment variables'
+      );
+    }
     notFound();
   }
 }
