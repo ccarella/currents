@@ -2,14 +2,19 @@
 
 import Link from 'next/link';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { Button } from '@/components/ui/Button';
 import { SignOutButton } from '@/components/auth';
 import { useState } from 'react';
 import { Menu, X } from 'lucide-react';
 
 export default function Header() {
-  const { user, loading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const { profile, loading: profileLoading } = useUserProfile();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const loading = authLoading || profileLoading;
+  const profileUrl = profile?.username ? `/${profile.username}` : '/profile';
 
   const toggleMobileMenu = () => {
     setIsMobileMenuOpen(!isMobileMenuOpen);
@@ -76,7 +81,7 @@ export default function Header() {
                         Dashboard
                       </Link>
                       <Link
-                        href="/profile"
+                        href={profileUrl}
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
                       >
                         Profile
@@ -170,7 +175,7 @@ export default function Header() {
                       Dashboard
                     </Link>
                     <Link
-                      href="/profile"
+                      href={profileUrl}
                       className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
                       onClick={() => setIsMobileMenuOpen(false)}
                     >
