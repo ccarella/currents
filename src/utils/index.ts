@@ -1,2 +1,1 @@
-// Utility functions will be added here
-export {};
+export { cn } from '@/lib/utils/cn';
