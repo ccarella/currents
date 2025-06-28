@@ -66,27 +66,77 @@ export function useCreatePost() {
       // Snapshot the previous value
       const previousPosts = queryClient.getQueryData(postKeys.lists());
 
+      // Generate a temporary ID for the optimistic update
+      const tempId = `temp-${Date.now()}-${Math.random()}`;
+      const optimisticPost = {
+        ...newPost,
+        id: tempId,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      } as Post;
+
       // Optimistically update to the new value
       queryClient.setQueryData(postKeys.lists(), (old) => {
         if (!old || typeof old !== 'object' || !('pages' in old)) return old;
-        // Add the new post to the beginning of the first page
-        const oldData = old as { pages: Post[][]; pageParams: unknown[] };
-        const newPages = [...oldData.pages];
-        if (newPages[0]) {
-          newPages[0] = [newPost as Post, ...newPages[0]];
-        }
-        return { ...oldData, pages: newPages };
+
+        const oldData = old as {
+          pages: PostWithProfile[][];
+          pageParams: unknown[];
+        };
+
+        // Create a deep copy to avoid mutation
+        const newPages = oldData.pages.map((page, pageIndex) => {
+          if (pageIndex === 0) {
+            // Add to first page only
+            return [optimisticPost as PostWithProfile, ...page];
+          }
+          return [...page];
+        });
+
+        return {
+          ...oldData,
+          pages: newPages,
+          pageParams: [...oldData.pageParams],
+        };
       });
 
-      // Return a context object with the snapshotted value
-      return { previousPosts };
+      // Return a context object with the snapshotted value and temp ID
+      return { previousPosts, tempId };
     },
     onError: (_err, _newPost, context) => {
       // If the mutation fails, use the context returned from onMutate to roll back
-      queryClient.setQueryData(postKeys.lists(), context?.previousPosts);
+      if (context?.previousPosts) {
+        queryClient.setQueryData(postKeys.lists(), context.previousPosts);
+      }
+    },
+    onSuccess: (data, _variables, context) => {
+      // Replace the temporary post with the real one
+      queryClient.setQueryData(postKeys.lists(), (old) => {
+        if (!old || typeof old !== 'object' || !('pages' in old)) return old;
+
+        const oldData = old as {
+          pages: PostWithProfile[][];
+          pageParams: unknown[];
+        };
+
+        // Replace temp post with real post
+        const newPages = oldData.pages.map((page) => {
+          return page.map((post) => {
+            if (post.id === context?.tempId) {
+              return data as PostWithProfile;
+            }
+            return post;
+          });
+        });
+
+        return {
+          ...oldData,
+          pages: newPages,
+        };
+      });
     },
     onSettled: () => {
-      // Always refetch after error or success
+      // Always refetch after error or success to ensure consistency
       queryClient.invalidateQueries({ queryKey: postKeys.lists() });
     },
   });

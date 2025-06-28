@@ -9,15 +9,28 @@ vi.mock('@/components/PlainTextEditor', () => ({
   default: ({
     placeholder,
     initialContent,
+    onContentChange,
   }: {
     placeholder?: string;
     initialContent?: string;
-  }) => (
-    <div data-testid="plain-text-editor">
-      <div>{placeholder}</div>
-      <div>{initialContent}</div>
-    </div>
-  ),
+    onContentChange?: (content: string) => void;
+  }) => {
+    // Simulate loading content from localStorage if no initialContent
+    const content =
+      initialContent || localStorage.getItem('draft-content') || '';
+
+    // Call onContentChange with the content
+    if (onContentChange) {
+      setTimeout(() => onContentChange(content), 0);
+    }
+
+    return (
+      <div data-testid="plain-text-editor">
+        <div>{placeholder}</div>
+        <div>{content}</div>
+      </div>
+    );
+  },
   DRAFT_CONTENT_KEY: 'draft-content',
   DRAFT_TIMESTAMP_KEY: 'draft-timestamp',
 }));
@@ -59,13 +72,18 @@ describe('WritePage', () => {
     localStorage.clear();
   });
 
-  it('renders the write page with title input and editor', () => {
+  it('renders the write page with title input and editor', async () => {
     render(<WritePage />);
 
     expect(
       screen.getByPlaceholderText('Enter your title...')
     ).toBeInTheDocument();
-    expect(screen.getByTestId('plain-text-editor')).toBeInTheDocument();
+
+    // Wait for the editor to load (it's dynamically imported)
+    await waitFor(() => {
+      expect(screen.getByTestId('plain-text-editor')).toBeInTheDocument();
+    });
+
     expect(
       screen.getByText(
         'Start writing your story... (plain text only, no formatting)'
