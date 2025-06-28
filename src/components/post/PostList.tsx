@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePostsService } from '@/lib/posts-context';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import PostCard from './PostCard';
+import PostCardSkeleton from './PostCardSkeleton';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import type { Database } from '@/types/database.types';
 
@@ -75,9 +76,12 @@ export default function PostList() {
   useInfiniteScroll(loadMore);
 
   if (loading) {
+    const skeletonCount = 3;
     return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <div className="text-gray-500">Loading...</div>
+      <div className="space-y-4" role="status" aria-label="Loading posts">
+        {[...Array(skeletonCount)].map((_, index) => (
+          <PostCardSkeleton key={index} />
+        ))}
       </div>
     );
   }
@@ -130,7 +134,13 @@ export default function PostList() {
         <PostCard key={post.id} post={post} />
       ))}
 
-      {loadingMore && <LoadingSpinner />}
+      {loadingMore && (
+        <LoadingSpinner
+          size="sm"
+          className="py-4"
+          label="Loading more posts..."
+        />
+      )}
 
       {!hasMore && posts.length > 0 && (
         <div className="text-center py-8 text-gray-500">

@@ -21,15 +21,20 @@ interface PostViewProps {
 
 export default function PostView({ post }: PostViewProps) {
   const [isOwner, setIsOwner] = useState(false);
+  const [isCheckingOwnership, setIsCheckingOwnership] = useState(true);
   const supabase = createClient();
 
   useEffect(() => {
     async function checkOwnership() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user && user.id === post.author_id) {
-        setIsOwner(true);
+      try {
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (user && user.id === post.author_id) {
+          setIsOwner(true);
+        }
+      } finally {
+        setIsCheckingOwnership(false);
       }
     }
     checkOwnership();
@@ -70,7 +75,11 @@ export default function PostView({ post }: PostViewProps) {
                 },
               }}
             />
-            {isOwner && (
+            {isCheckingOwnership ? (
+              <div className="inline-flex items-center px-3 py-1.5">
+                <div className="animate-pulse bg-gray-200 dark:bg-gray-700 rounded-md h-8 w-16" />
+              </div>
+            ) : isOwner ? (
               <Link
                 href={`/write?id=${post.id}`}
                 className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
@@ -78,7 +87,7 @@ export default function PostView({ post }: PostViewProps) {
                 <PencilIcon className="w-4 h-4 mr-1.5" />
                 Edit
               </Link>
-            )}
+            ) : null}
           </div>
         </div>
         {post.title && (
