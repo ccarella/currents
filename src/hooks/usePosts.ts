@@ -3,15 +3,20 @@ import {
   useMutation,
   useQueryClient,
 } from '@tanstack/react-query';
-import {
-  getActivePostsPaginated,
-  createPost,
-  updatePost,
-  deletePost,
-} from '@/lib/supabase/posts';
+import { PostsService } from '@/lib/posts';
+import { createClient } from '@/lib/supabase/client';
+import { createPost, updatePost } from '@/lib/supabase/posts';
 import type { Database } from '@/types/database.types';
 
 type Post = Database['public']['Tables']['posts']['Row'];
+type PostWithProfile = Post & {
+  profiles: {
+    id: string;
+    username: string;
+    full_name: string | null;
+    avatar_url: string | null;
+  };
+};
 
 // Query keys
 export const postKeys = {
@@ -27,14 +32,22 @@ export const postKeys = {
 export function useInfinitePosts() {
   return useInfiniteQuery({
     queryKey: postKeys.lists(),
-    queryFn: ({ pageParam = 0 }) => getActivePostsPaginated(pageParam, 20),
+    queryFn: async ({ pageParam = 1 }) => {
+      const supabase = createClient();
+      const postsService = new PostsService(supabase);
+      const { posts } = await postsService.getActivePostsPaginated(
+        pageParam,
+        20
+      );
+      return posts as PostWithProfile[];
+    },
     getNextPageParam: (lastPage, allPages) => {
       // If we got less than 20 items, we've reached the end
       if (lastPage.length < 20) return undefined;
-      // Otherwise, return the next offset
-      return allPages.length * 20;
+      // Otherwise, return the next page number
+      return allPages.length + 1;
     },
-    initialPageParam: 0,
+    initialPageParam: 1,
     staleTime: 1 * 60 * 1000, // Consider data stale after 1 minute
     gcTime: 5 * 60 * 1000, // Keep in cache for 5 minutes
   });
@@ -102,7 +115,11 @@ export function useDeletePost() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: deletePost,
+    mutationFn: async (postId: string) => {
+      const supabase = createClient();
+      const postsService = new PostsService(supabase);
+      await postsService.deletePost(postId);
+    },
     onSuccess: () => {
       // Invalidate and refetch posts list
       queryClient.invalidateQueries({ queryKey: postKeys.lists() });

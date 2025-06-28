@@ -28,9 +28,9 @@ const PlainTextEditor = dynamic(() => import('@/components/PlainTextEditor'), {
   ssr: false,
 });
 
-// Export these constants since we can't import them from the dynamic component
-export const DRAFT_CONTENT_KEY = 'draftContent';
-export const DRAFT_TIMESTAMP_KEY = 'draftTimestamp';
+// Constants for draft storage
+const DRAFT_CONTENT_KEY = 'draftContent';
+const DRAFT_TIMESTAMP_KEY = 'draftTimestamp';
 
 // Utility function to extract error messages
 function getErrorMessage(err: unknown): string {

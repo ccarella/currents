@@ -1,4 +1,4 @@
-import { onCLS, onFCP, onFID, onLCP, onTTFB, onINP } from 'web-vitals';
+import { onCLS, onFCP, onLCP, onTTFB, onINP } from 'web-vitals';
 
 type WebVitalsMetric = {
   id: string;
@@ -55,7 +55,6 @@ function sendToAnalytics(metric: WebVitalsMetric) {
 export function reportWebVitals() {
   onCLS(sendToAnalytics);
   onFCP(sendToAnalytics);
-  onFID(sendToAnalytics);
   onLCP(sendToAnalytics);
   onTTFB(sendToAnalytics);
   onINP(sendToAnalytics);

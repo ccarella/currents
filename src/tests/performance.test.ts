@@ -6,7 +6,6 @@ import path from 'path';
 vi.mock('web-vitals', () => ({
   onCLS: vi.fn(),
   onFCP: vi.fn(),
-  onFID: vi.fn(),
   onLCP: vi.fn(),
   onTTFB: vi.fn(),
   onINP: vi.fn(),
