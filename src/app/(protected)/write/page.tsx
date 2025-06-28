@@ -1,11 +1,8 @@
 'use client';
 
-import PlainTextEditor, {
-  DRAFT_CONTENT_KEY,
-  DRAFT_TIMESTAMP_KEY,
-} from '@/components/PlainTextEditor';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import {
   createPost,
   updatePost,
@@ -20,6 +17,20 @@ import {
   DialogFooter,
 } from '@/components/ui/Dialog';
 import { LoadingOverlay } from '@/components/ui/LoadingOverlay';
+
+// Dynamic import for PlainTextEditor with loading state
+const PlainTextEditor = dynamic(() => import('@/components/PlainTextEditor'), {
+  loading: () => (
+    <div className="flex items-center justify-center h-full">
+      <div className="text-gray-600">Loading editor...</div>
+    </div>
+  ),
+  ssr: false,
+});
+
+// Constants for draft storage
+const DRAFT_CONTENT_KEY = 'draftContent';
+const DRAFT_TIMESTAMP_KEY = 'draftTimestamp';
 
 // Utility function to extract error messages
 function getErrorMessage(err: unknown): string {

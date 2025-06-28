@@ -5,6 +5,9 @@ import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { AuthProvider } from '@/lib/AuthContext';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
+import { WebVitals } from '@/components/WebVitals';
+import { ServiceWorkerRegistration } from '@/components/ServiceWorkerRegistration';
+import { QueryProvider } from '@/lib/providers/QueryProvider';
 
 // Optimize font loading with subset and display swap
 const inter = Inter({
@@ -78,13 +81,17 @@ export default function RootLayout({
         />
       </head>
       <body className="font-serif antialiased flex flex-col min-h-screen">
-        <ThemeProvider>
-          <AuthProvider>
-            <Header />
-            <main className="flex-1">{children}</main>
-            <Footer />
-          </AuthProvider>
-        </ThemeProvider>
+        <WebVitals />
+        <ServiceWorkerRegistration />
+        <QueryProvider>
+          <ThemeProvider>
+            <AuthProvider>
+              <Header />
+              <main className="flex-1">{children}</main>
+              <Footer />
+            </AuthProvider>
+          </ThemeProvider>
+        </QueryProvider>
       </body>
     </html>
   );
