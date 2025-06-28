@@ -1,12 +1,7 @@
 'use client';
 
-import { PostList } from '@/components/post';
-import { PostsServiceProvider } from '@/lib/posts-context';
+import OptimizedPostList from './OptimizedPostList';
 
 export default function PostFeed() {
-  return (
-    <PostsServiceProvider>
-      <PostList />
-    </PostsServiceProvider>
-  );
+  return <OptimizedPostList />;
 }
