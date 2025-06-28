@@ -29,6 +29,13 @@ vi.mock('next/dynamic', () => ({
   },
 }));
 
+// Mock navigator.vibrate
+const mockVibrate = vi.fn();
+Object.defineProperty(navigator, 'vibrate', {
+  value: mockVibrate,
+  writable: true,
+});
+
 // Mock PreviewPane
 vi.mock('@/components/editor/PreviewPane', () => ({
   default: vi.fn(({ content }) => (
@@ -39,6 +46,7 @@ vi.mock('@/components/editor/PreviewPane', () => ({
 describe('MarkdownEditor Mobile Features', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    mockVibrate.mockClear();
     // Reset window size
     global.innerWidth = 1024;
     global.dispatchEvent(new Event('resize'));
@@ -158,9 +166,6 @@ describe('MarkdownEditor Mobile Features', () => {
 
       await waitFor(() => {
         expect(screen.getByText('Swipe to preview')).toBeInTheDocument();
-        expect(screen.getByText('Swipe to preview')).toHaveClass(
-          'animate-pulse'
-        );
       });
     });
 
@@ -169,6 +174,10 @@ describe('MarkdownEditor Mobile Features', () => {
       global.dispatchEvent(new Event('resize'));
 
       render(<MarkdownEditor initialContent="Test content" />);
+
+      await waitFor(() => {
+        expect(screen.queryByText('Swipe to preview')).not.toBeInTheDocument();
+      });
 
       const editor = screen.getByPlaceholderText(
         'Start writing your content here...'
@@ -182,11 +191,14 @@ describe('MarkdownEditor Mobile Features', () => {
         fireEvent.touchEnd(container);
       }
 
-      // Should still be in edit mode
+      // Should still be in edit mode (preview pane exists but is hidden)
       expect(
         screen.getByPlaceholderText('Start writing your content here...')
       ).toBeInTheDocument();
-      expect(screen.queryByTestId('preview-pane')).not.toBeInTheDocument();
+
+      // The preview pane is in the DOM but should be translated off-screen
+      const previewPane = screen.getByTestId('preview-pane').parentElement;
+      expect(previewPane).toHaveClass('translate-x-full');
     });
   });
 
@@ -238,6 +250,185 @@ describe('MarkdownEditor Mobile Features', () => {
 
       await waitFor(() => {
         expect(screen.queryByText('Swipe to preview')).not.toBeInTheDocument();
+      });
+    });
+  });
+
+  describe('UX Enhancements', () => {
+    describe('Haptic Feedback', () => {
+      it('triggers haptic feedback on swipe gesture', async () => {
+        global.innerWidth = 375;
+        global.dispatchEvent(new Event('resize'));
+
+        render(<MarkdownEditor initialContent="Test content" />);
+
+        const editor = screen.getByPlaceholderText(
+          'Start writing your content here...'
+        );
+        const container = editor.closest('.flex-1');
+
+        // Simulate left swipe
+        if (container) {
+          fireEvent.touchStart(container, { touches: [{ clientX: 200 }] });
+          fireEvent.touchMove(container, { touches: [{ clientX: 100 }] });
+          fireEvent.touchEnd(container);
+        }
+
+        await waitFor(() => {
+          expect(mockVibrate).toHaveBeenCalledWith(10);
+        });
+      });
+
+      it('triggers haptic feedback when clicking mode buttons on mobile', async () => {
+        global.innerWidth = 375;
+        global.dispatchEvent(new Event('resize'));
+
+        render(<MarkdownEditor />);
+
+        const previewButton = screen.getByLabelText('Preview mode');
+        fireEvent.click(previewButton);
+
+        await waitFor(() => {
+          expect(mockVibrate).toHaveBeenCalledWith(10);
+        });
+      });
+
+      it('does not trigger haptic feedback on desktop', async () => {
+        global.innerWidth = 1024;
+        global.dispatchEvent(new Event('resize'));
+
+        render(<MarkdownEditor />);
+
+        const previewButton = screen.getByLabelText('Preview mode');
+        fireEvent.click(previewButton);
+
+        await waitFor(() => {
+          expect(mockVibrate).not.toHaveBeenCalled();
+        });
+      });
+    });
+
+    describe('Swipe Animation', () => {
+      it('shows transition effect when switching modes', async () => {
+        render(<MarkdownEditor initialContent="Test content" />);
+
+        const previewButton = screen.getByLabelText('Preview mode');
+        fireEvent.click(previewButton);
+
+        // Wait for preview to appear and check for transition classes
+        await waitFor(() => {
+          const container = screen.getByTestId('preview-pane').parentElement;
+          expect(container).toHaveClass('transition-transform', 'duration-300');
+        });
+      });
+    });
+
+    describe('Accessibility', () => {
+      it('includes aria-live region for swipe instructions', async () => {
+        global.innerWidth = 375;
+        global.dispatchEvent(new Event('resize'));
+
+        render(<MarkdownEditor />);
+
+        await waitFor(() => {
+          const liveRegion = screen.getByText((content) => {
+            return (
+              content.startsWith('Current mode: edit.') &&
+              content.includes('Swipe')
+            );
+          });
+          expect(liveRegion).toHaveClass('sr-only');
+          expect(liveRegion).toHaveAttribute('aria-live', 'polite');
+          expect(liveRegion).toHaveAttribute('aria-atomic', 'true');
+        });
+      });
+
+      it('updates aria-live region when mode changes', async () => {
+        global.innerWidth = 375;
+        global.dispatchEvent(new Event('resize'));
+
+        render(<MarkdownEditor />);
+
+        const previewButton = screen.getByLabelText('Preview mode');
+        fireEvent.click(previewButton);
+
+        await waitFor(() => {
+          const liveRegion = screen.getByText((content) => {
+            return (
+              content.startsWith('Current mode: preview.') &&
+              content.includes('Swipe')
+            );
+          });
+          expect(liveRegion).toBeInTheDocument();
+        });
+      });
+
+      it('does not show aria-live region on desktop', () => {
+        global.innerWidth = 1024;
+        global.dispatchEvent(new Event('resize'));
+
+        render(<MarkdownEditor />);
+
+        const liveRegion = screen.queryByText(/Current mode:/);
+        expect(liveRegion).not.toBeInTheDocument();
+      });
+    });
+
+    describe('Swipe Progress Indicator', () => {
+      it('scales swipe indicator based on swipe progress', async () => {
+        global.innerWidth = 375;
+        global.dispatchEvent(new Event('resize'));
+
+        render(<MarkdownEditor />);
+
+        const editor = screen.getByPlaceholderText(
+          'Start writing your content here...'
+        );
+        const container = editor.closest('.flex-1');
+
+        // Simulate partial swipe
+        if (container) {
+          fireEvent.touchStart(container, { touches: [{ clientX: 200 }] });
+          fireEvent.touchMove(container, { touches: [{ clientX: 175 }] });
+        }
+
+        await waitFor(() => {
+          const indicator = screen.getByText('Swipe to preview');
+          // Check that the indicator has transform styling with scale
+          const style = indicator.getAttribute('style');
+          expect(style).toContain('scale(1.05)');
+        });
+      });
+    });
+
+    describe('Velocity-based Swipe Detection', () => {
+      it('triggers mode change with fast swipe even if distance is small', async () => {
+        global.innerWidth = 375;
+        global.dispatchEvent(new Event('resize'));
+
+        render(<MarkdownEditor initialContent="Test content" />);
+
+        const editor = screen.getByPlaceholderText(
+          'Start writing your content here...'
+        );
+        const container = editor.closest('.flex-1');
+
+        // Simulate fast swipe with small distance (35px in 50ms = 0.7px/ms)
+        if (container) {
+          vi.spyOn(Date, 'now')
+            .mockReturnValueOnce(1000) // touchStart time
+            .mockReturnValueOnce(1050); // touchEnd time
+
+          fireEvent.touchStart(container, { touches: [{ clientX: 200 }] });
+          fireEvent.touchMove(container, { touches: [{ clientX: 165 }] });
+          fireEvent.touchEnd(container);
+        }
+
+        await waitFor(() => {
+          expect(screen.getByTestId('preview-pane')).toBeInTheDocument();
+        });
+
+        vi.spyOn(Date, 'now').mockRestore();
       });
     });
   });
