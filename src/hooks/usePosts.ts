@@ -81,7 +81,7 @@ export function useCreatePost() {
       // Return a context object with the snapshotted value
       return { previousPosts };
     },
-    onError: (err, newPost, context) => {
+    onError: (_err, _newPost, context) => {
       // If the mutation fails, use the context returned from onMutate to roll back
       queryClient.setQueryData(postKeys.lists(), context?.previousPosts);
     },
@@ -97,9 +97,21 @@ export function useUpdatePost() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, updates }: { id: string; updates: Partial<Post> }) =>
-      updatePost(id, updates),
-    onSuccess: (data, variables) => {
+    mutationFn: ({ id, updates }: { id: string; updates: Partial<Post> }) => {
+      // Filter out null values and only include allowed fields
+      const cleanUpdates: Parameters<typeof updatePost>[1] = {};
+      if (updates.title !== undefined && updates.title !== null) {
+        cleanUpdates.title = updates.title;
+      }
+      if (updates.content !== undefined && updates.content !== null) {
+        cleanUpdates.content = updates.content;
+      }
+      if (updates.status !== undefined && updates.status !== null) {
+        cleanUpdates.status = updates.status;
+      }
+      return updatePost(id, cleanUpdates);
+    },
+    onSuccess: (_data, variables) => {
       // Invalidate and refetch posts list
       queryClient.invalidateQueries({ queryKey: postKeys.lists() });
       // Invalidate specific post detail

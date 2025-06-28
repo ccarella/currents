@@ -21,7 +21,7 @@ function getConnectionSpeed() {
 }
 
 function sendToAnalytics(metric: WebVitalsMetric) {
-  const analyticsId = process.env.NEXT_PUBLIC_ANALYTICS_ID;
+  const analyticsId = process.env['NEXT_PUBLIC_ANALYTICS_ID'];
 
   if (!analyticsId) {
     return;

@@ -3,20 +3,17 @@
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 
-const SignUpForm = dynamic(
-  () => import('@/components/auth/SignUpForm').then((mod) => mod.SignUpForm),
-  {
-    loading: () => (
-      <div className="w-full max-w-md p-8 bg-gray-50 rounded-lg animate-pulse">
-        <div className="h-10 bg-gray-200 rounded mb-4"></div>
-        <div className="h-10 bg-gray-200 rounded mb-4"></div>
-        <div className="h-10 bg-gray-200 rounded mb-4"></div>
-        <div className="h-10 bg-gray-200 rounded"></div>
-      </div>
-    ),
-    ssr: false,
-  }
-);
+const SignUpForm = dynamic(() => import('@/components/auth/SignUpForm'), {
+  loading: () => (
+    <div className="w-full max-w-md p-8 bg-gray-50 rounded-lg animate-pulse">
+      <div className="h-10 bg-gray-200 rounded mb-4"></div>
+      <div className="h-10 bg-gray-200 rounded mb-4"></div>
+      <div className="h-10 bg-gray-200 rounded mb-4"></div>
+      <div className="h-10 bg-gray-200 rounded"></div>
+    </div>
+  ),
+  ssr: false,
+});
 
 export default function ClientSignUpPage() {
   return (
