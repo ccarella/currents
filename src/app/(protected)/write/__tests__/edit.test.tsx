@@ -4,6 +4,7 @@ import WritePage from '../page';
 import { useRouter, useSearchParams } from 'next/navigation';
 import * as postsLib from '@/lib/supabase/posts';
 import type { Database } from '@/types/database.generated';
+import React from 'react';
 
 type Post = Database['public']['Tables']['posts']['Row'];
 
@@ -23,24 +24,44 @@ vi.mock('@/lib/supabase/posts', () => ({
 
 // Mock the PlainTextEditor component
 vi.mock('@/components/PlainTextEditor', () => ({
-  default: ({
+  default: function PlainTextEditorMock({
     initialContent,
     placeholder,
+    onContentChange,
   }: {
     initialContent?: string;
     placeholder: string;
-  }) => (
-    <div>
-      <textarea
-        data-testid="plain-text-editor"
-        placeholder={placeholder}
-        defaultValue={initialContent}
-        onChange={(e) => {
-          localStorage.setItem('draft-content', e.target.value);
-        }}
-      />
-    </div>
-  ),
+    onContentChange?: (content: string) => void;
+  }) {
+    const [content, setContent] = React.useState(initialContent || '');
+
+    React.useEffect(() => {
+      if (onContentChange) {
+        onContentChange(content);
+      }
+    }, [content, onContentChange]);
+
+    React.useEffect(() => {
+      if (initialContent) {
+        setContent(initialContent);
+      }
+    }, [initialContent]);
+
+    return (
+      <div>
+        <textarea
+          data-testid="plain-text-editor"
+          placeholder={placeholder}
+          value={content}
+          onChange={(e) => {
+            const newContent = e.target.value;
+            setContent(newContent);
+            localStorage.setItem('draft-content', newContent);
+          }}
+        />
+      </div>
+    );
+  },
   DRAFT_CONTENT_KEY: 'draft-content',
   DRAFT_TIMESTAMP_KEY: 'draft-timestamp',
 }));
@@ -127,10 +148,17 @@ describe('WritePage - Edit Mode', () => {
 
     render(<WritePage />);
 
+    // Wait for post to load first
     await waitFor(() => {
-      expect(localStorage.getItem('draft-content')).toBeNull();
-      expect(localStorage.getItem('draft-timestamp')).toBeNull();
+      expect(
+        screen.getByDisplayValue('Existing Post Title')
+      ).toBeInTheDocument();
+      expect(screen.getByText('Existing post content')).toBeInTheDocument();
     });
+
+    // Then check localStorage was cleared
+    expect(localStorage.getItem('draft-content')).toBeNull();
+    expect(localStorage.getItem('draft-timestamp')).toBeNull();
   });
 
   it('updates existing post without showing confirmation dialog', async () => {
@@ -153,10 +181,11 @@ describe('WritePage - Edit Mode', () => {
 
     // Update title and content
     const titleInput = screen.getByDisplayValue('Existing Post Title');
+    const textarea = screen.getByTestId('plain-text-editor');
     const updateButton = screen.getByText('Update Post');
 
     fireEvent.change(titleInput, { target: { value: 'Updated Title' } });
-    localStorage.setItem('draft-content', 'Updated content');
+    fireEvent.change(textarea, { target: { value: 'Updated content' } });
 
     fireEvent.click(updateButton);
 
@@ -195,8 +224,10 @@ describe('WritePage - Edit Mode', () => {
       ).toBeInTheDocument();
     });
 
+    const textarea = screen.getByTestId('plain-text-editor');
     const updateButton = screen.getByText('Update Post');
-    localStorage.setItem('draft-content', 'Updated content');
+
+    fireEvent.change(textarea, { target: { value: 'Updated content' } });
     fireEvent.click(updateButton);
 
     // Check if the update button is disabled during update
@@ -231,8 +262,10 @@ describe('WritePage - Edit Mode', () => {
       ).toBeInTheDocument();
     });
 
+    const textarea = screen.getByTestId('plain-text-editor');
     const updateButton = screen.getByText('Update Post');
-    localStorage.setItem('draft-content', 'Updated content');
+
+    fireEvent.change(textarea, { target: { value: 'Updated content' } });
     fireEvent.click(updateButton);
 
     await waitFor(() => {
@@ -272,8 +305,10 @@ describe('WritePage - Edit Mode', () => {
       ).toBeInTheDocument();
     });
 
+    const textarea = screen.getByTestId('plain-text-editor');
     const updateButton = screen.getByText('Update Post');
-    localStorage.setItem('draft-content', 'Updated content');
+
+    fireEvent.change(textarea, { target: { value: 'Updated content' } });
     fireEvent.click(updateButton);
 
     await waitFor(() => {

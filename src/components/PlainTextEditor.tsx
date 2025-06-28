@@ -10,11 +10,13 @@ export const DRAFT_TIMESTAMP_KEY = 'draft-timestamp';
 interface PlainTextEditorProps {
   initialContent?: string;
   placeholder?: string;
+  onContentChange?: (content: string) => void;
 }
 
 export default function PlainTextEditor({
   initialContent = '',
   placeholder = 'Start writing your content here... (plain text only, no formatting)',
+  onContentChange,
 }: PlainTextEditorProps) {
   const [content, setContent] = useState(initialContent);
   const [isFocusMode, setIsFocusMode] = useState(false);
@@ -30,6 +32,11 @@ export default function PlainTextEditor({
   useEffect(() => {
     if (saveTimeoutRef.current) {
       clearTimeout(saveTimeoutRef.current);
+    }
+
+    // Notify parent component of content changes
+    if (onContentChange) {
+      onContentChange(content);
     }
 
     if (content && !isUnmountingRef.current) {
@@ -53,7 +60,7 @@ export default function PlainTextEditor({
         clearTimeout(saveTimeoutRef.current);
       }
     };
-  }, [content]);
+  }, [content, onContentChange]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -78,9 +85,15 @@ export default function PlainTextEditor({
     return () => window.removeEventListener('beforeunload', handleBeforeUnload);
   }, [hasUnsavedChanges]);
 
-  // Load draft from localStorage on mount
+  // Load draft from localStorage on mount only for new posts
+  const [hasLoadedDraft, setHasLoadedDraft] = useState(false);
+
   useEffect(() => {
-    if (!initialContent) {
+    // Only load draft if:
+    // 1. We haven't loaded a draft yet
+    // 2. There's no initial content (new post)
+    // 3. We're not waiting for content to load
+    if (!hasLoadedDraft && !initialContent) {
       const savedContent = localStorage.getItem(DRAFT_CONTENT_KEY);
       const savedTimestamp = localStorage.getItem(DRAFT_TIMESTAMP_KEY);
 
@@ -90,12 +103,17 @@ export default function PlainTextEditor({
           setLastSaved(new Date(savedTimestamp));
         }
       }
+      setHasLoadedDraft(true);
     }
-  }, [initialContent]);
+  }, [initialContent, hasLoadedDraft]);
 
-  // Update content when initialContent changes (for reset functionality)
+  // Update content when initialContent changes (for edit functionality)
   useEffect(() => {
-    setContent(initialContent);
+    if (initialContent) {
+      setContent(initialContent);
+      // Don't load draft when we have initial content (editing existing post)
+      setHasLoadedDraft(true);
+    }
   }, [initialContent]);
 
   // Auto-focus the textarea on mount

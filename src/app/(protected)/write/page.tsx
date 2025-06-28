@@ -29,8 +29,8 @@ const PlainTextEditor = dynamic(() => import('@/components/PlainTextEditor'), {
 });
 
 // Constants for draft storage
-const DRAFT_CONTENT_KEY = 'draftContent';
-const DRAFT_TIMESTAMP_KEY = 'draftTimestamp';
+const DRAFT_CONTENT_KEY = 'draft-content';
+const DRAFT_TIMESTAMP_KEY = 'draft-timestamp';
 
 // Utility function to extract error messages
 function getErrorMessage(err: unknown): string {
@@ -68,6 +68,7 @@ export default function WritePage() {
 
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [currentEditorContent, setCurrentEditorContent] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isPublishing, setIsPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -94,6 +95,7 @@ export default function WritePage() {
           if (isMountedRef.current && !abortController.signal.aborted) {
             setTitle(post.title);
             setContent(post.content || '');
+            setCurrentEditorContent(post.content || '');
             setCurrentPostId(post.id);
             setIsEditMode(true);
             // Clear any existing draft when editing
@@ -260,11 +262,8 @@ export default function WritePage() {
               </div>
               <button
                 onClick={() => {
-                  const editorContent =
-                    typeof window !== 'undefined'
-                      ? localStorage.getItem(DRAFT_CONTENT_KEY) || content
-                      : content;
-                  handlePublish(editorContent);
+                  // Use the current editor content which is kept in sync
+                  handlePublish(currentEditorContent || content);
                 }}
                 disabled={!title.trim() || isPublishing}
                 className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors"
@@ -289,6 +288,7 @@ export default function WritePage() {
           <PlainTextEditor
             initialContent={content}
             placeholder="Start writing your story... (plain text only, no formatting)"
+            onContentChange={setCurrentEditorContent}
           />
         </div>
       </div>
