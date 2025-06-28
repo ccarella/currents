@@ -76,9 +76,10 @@ export default function PostList() {
   useInfiniteScroll(loadMore);
 
   if (loading) {
+    const skeletonCount = 3;
     return (
       <div className="space-y-4" role="status" aria-label="Loading posts">
-        {[...Array(3)].map((_, index) => (
+        {[...Array(skeletonCount)].map((_, index) => (
           <PostCardSkeleton key={index} />
         ))}
       </div>
