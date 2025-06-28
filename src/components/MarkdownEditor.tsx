@@ -196,12 +196,16 @@ export default function MarkdownEditor({
 
   // Handle touch start
   const handleTouchStart = useCallback((e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX;
+    if (e.touches.length > 0) {
+      touchStartX.current = e.touches[0]?.clientX ?? null;
+    }
   }, []);
 
   // Handle touch move
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
-    touchEndX.current = e.touches[0].clientX;
+    if (e.touches.length > 0) {
+      touchEndX.current = e.touches[0]?.clientX ?? null;
+    }
   }, []);
 
   // Handle touch end
