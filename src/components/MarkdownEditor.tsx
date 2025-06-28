@@ -36,8 +36,19 @@ export default function MarkdownEditor({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [viewMode, setViewMode] = useState<'edit' | 'preview'>('edit');
   const [isPreviewLoading, setIsPreviewLoading] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [swipeProgress, setSwipeProgress] = useState(0);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isUnmountingRef = useRef(false);
+
+  // Touch gesture handling
+  const touchStartX = useRef<number | null>(null);
+  const touchEndX = useRef<number | null>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
+  const swipeThreshold = 50; // pixels
+  const swipeVelocityThreshold = 0.5; // pixels per millisecond
+  const touchStartTime = useRef<number | null>(null);
 
   // Auto-save to localStorage with cleanup
   useEffect(() => {
@@ -109,6 +120,18 @@ export default function MarkdownEditor({
     setContent(initialContent);
   }, [initialContent]);
 
+  // Check if device is mobile
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
   // Calculate word count and reading time
   useEffect(() => {
     const words = content
@@ -145,16 +168,31 @@ export default function MarkdownEditor({
     setIsFocusMode(!isFocusMode);
   };
 
-  const handleViewModeChange = (mode: 'edit' | 'preview') => {
-    if (mode === 'preview' && viewMode !== 'preview') {
-      setIsPreviewLoading(true);
-      setViewMode(mode);
-      // Simulate a brief loading state for large documents
-      setTimeout(() => setIsPreviewLoading(false), 100);
-    } else {
-      setViewMode(mode);
-    }
-  };
+  const handleViewModeChange = useCallback(
+    (mode: 'edit' | 'preview', withAnimation = true) => {
+      if (mode !== viewMode) {
+        // Trigger haptic feedback on mobile
+        if (isMobile && 'vibrate' in navigator) {
+          navigator.vibrate(10);
+        }
+
+        if (withAnimation) {
+          setIsTransitioning(true);
+          setTimeout(() => setIsTransitioning(false), 300);
+        }
+
+        if (mode === 'preview') {
+          setIsPreviewLoading(true);
+          setViewMode(mode);
+          // Simulate a brief loading state for large documents
+          setTimeout(() => setIsPreviewLoading(false), 100);
+        } else {
+          setViewMode(mode);
+        }
+      }
+    },
+    [viewMode, isMobile]
+  );
 
   const formatLastSaved = useMemo(() => {
     if (!lastSaved) return null;
@@ -173,6 +211,62 @@ export default function MarkdownEditor({
     return `Saved on ${lastSaved.toLocaleDateString()}`;
   }, [lastSaved]);
 
+  // Handle touch start
+  const handleTouchStart = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length > 0) {
+      touchStartX.current = e.touches[0]?.clientX ?? null;
+      touchStartTime.current = Date.now();
+      setSwipeProgress(0);
+    }
+  }, []);
+
+  // Handle touch move
+  const handleTouchMove = useCallback((e: React.TouchEvent) => {
+    if (e.touches.length > 0 && touchStartX.current !== null) {
+      touchEndX.current = e.touches[0]?.clientX ?? null;
+
+      // Calculate swipe progress for visual feedback
+      const distance = (touchEndX.current ?? 0) - touchStartX.current;
+      const progress = Math.abs(distance) / swipeThreshold;
+      setSwipeProgress(Math.min(progress, 1));
+    }
+  }, []);
+
+  // Handle touch end
+  const handleTouchEnd = useCallback(() => {
+    if (!touchStartX.current || !touchEndX.current || !touchStartTime.current) {
+      setSwipeProgress(0);
+      return;
+    }
+
+    const distance = touchStartX.current - touchEndX.current;
+    const duration = Date.now() - touchStartTime.current;
+    const velocity = Math.abs(distance) / duration;
+
+    const isLeftSwipe =
+      distance > swipeThreshold ||
+      (distance > 30 && velocity > swipeVelocityThreshold);
+    const isRightSwipe =
+      distance < -swipeThreshold ||
+      (distance < -30 && velocity > swipeVelocityThreshold);
+
+    // Only handle swipes on mobile
+    if (isMobile) {
+      if (isLeftSwipe && viewMode === 'edit') {
+        handleViewModeChange('preview');
+      }
+      if (isRightSwipe && viewMode === 'preview') {
+        handleViewModeChange('edit');
+      }
+    }
+
+    // Reset values
+    touchStartX.current = null;
+    touchEndX.current = null;
+    touchStartTime.current = null;
+    setSwipeProgress(0);
+  }, [viewMode, isMobile, handleViewModeChange]);
+
   // Sanitize content for preview - currently handled by MDEditor internally
   // Keeping DOMPurify import for future custom preview implementation
 
@@ -182,20 +276,24 @@ export default function MarkdownEditor({
     >
       {/* Toolbar */}
       <div
-        className={`flex items-center justify-between p-4 border-b ${isFocusMode ? 'bg-white' : ''}`}
+        className={`flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 sm:p-4 border-b gap-3 ${isFocusMode ? 'bg-white' : ''}`}
       >
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 text-xs sm:text-sm text-gray-600">
             <FileText className="h-4 w-4" />
             <span>{wordCount} words</span>
             <span className="text-gray-400">•</span>
             <span>{readingTime} min read</span>
           </div>
           {formatLastSaved && (
-            <span className="text-sm text-gray-500">{formatLastSaved}</span>
+            <span className="text-xs sm:text-sm text-gray-500 hidden sm:inline">
+              {formatLastSaved}
+            </span>
           )}
           {hasUnsavedChanges && (
-            <span className="text-sm text-orange-500">• Unsaved changes</span>
+            <span className="text-xs sm:text-sm text-orange-500">
+              • Unsaved changes
+            </span>
           )}
         </div>
 
@@ -204,17 +302,20 @@ export default function MarkdownEditor({
             <button
               onClick={handleSave}
               disabled={isSaving}
-              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-3 sm:px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 touch-target"
               aria-label="Save document"
             >
               <Send className="h-4 w-4" />
-              {isSaving ? 'Posting...' : 'Post'}
+              <span className="hidden sm:inline">
+                {isSaving ? 'Posting...' : 'Post'}
+              </span>
+              <span className="sm:hidden">{isSaving ? '...' : 'Post'}</span>
             </button>
           )}
 
           <button
             onClick={toggleFocusMode}
-            className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md"
+            className="p-2.5 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-md touch-target hidden sm:flex"
             title={isFocusMode ? 'Exit focus mode' : 'Enter focus mode'}
             aria-label={isFocusMode ? 'Exit focus mode' : 'Enter focus mode'}
           >
@@ -227,8 +328,8 @@ export default function MarkdownEditor({
 
           <div className="flex items-center border rounded-md">
             <button
-              onClick={() => handleViewModeChange('edit')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-l-md transition-colors ${
+              onClick={() => handleViewModeChange('edit', true)}
+              className={`px-3 py-2 text-sm font-medium rounded-l-md transition-colors touch-target ${
                 viewMode === 'edit'
                   ? 'bg-gray-100 text-gray-900'
                   : 'text-gray-600 hover:text-gray-900'
@@ -236,10 +337,11 @@ export default function MarkdownEditor({
               aria-label="Edit mode"
             >
               <Edit3 className="h-4 w-4" />
+              <span className="hidden sm:inline ml-1">Edit</span>
             </button>
             <button
-              onClick={() => handleViewModeChange('preview')}
-              className={`px-3 py-1.5 text-sm font-medium rounded-r-md transition-colors ${
+              onClick={() => handleViewModeChange('preview', true)}
+              className={`px-3 py-2 text-sm font-medium rounded-r-md transition-colors touch-target ${
                 viewMode === 'preview'
                   ? 'bg-gray-100 text-gray-900'
                   : 'text-gray-600 hover:text-gray-900'
@@ -247,15 +349,52 @@ export default function MarkdownEditor({
               aria-label="Preview mode"
             >
               <Eye className="h-4 w-4" />
+              <span className="hidden sm:inline ml-1">Preview</span>
             </button>
           </div>
         </div>
       </div>
 
       {/* Editor/Preview */}
-      <div className="flex-1 overflow-hidden">
-        {viewMode === 'edit' ? (
-          <div className="h-full">
+      <div
+        ref={editorRef}
+        className="flex-1 overflow-hidden relative"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        {/* Swipe indicator for mobile */}
+        {isMobile && (
+          <>
+            <div
+              className={`absolute top-2 left-1/2 transform -translate-x-1/2 z-10 bg-gray-800/75 text-white px-3 py-1 rounded-full text-xs pointer-events-none transition-opacity duration-300 ${
+                swipeProgress > 0.3 ? 'opacity-100' : 'opacity-75'
+              }`}
+              style={{
+                transform: `translateX(-50%) scale(${1 + swipeProgress * 0.1})`,
+              }}
+            >
+              Swipe to {viewMode === 'edit' ? 'preview' : 'edit'}
+            </div>
+            {/* Accessibility announcement for screen readers */}
+            <div className="sr-only" aria-live="polite" aria-atomic="true">
+              Current mode: {viewMode}. Swipe{' '}
+              {viewMode === 'edit' ? 'left to preview' : 'right to edit'}.
+            </div>
+          </>
+        )}
+
+        <div
+          className={`relative h-full ${isTransitioning ? 'overflow-hidden' : ''}`}
+        >
+          {/* Edit Mode */}
+          <div
+            className={`h-full transition-transform duration-300 ease-in-out ${
+              viewMode === 'edit'
+                ? 'translate-x-0'
+                : '-translate-x-full absolute inset-0'
+            }`}
+          >
             <MDEditor
               value={content}
               onChange={(val) => setContent(val || '')}
@@ -268,8 +407,15 @@ export default function MarkdownEditor({
               }}
             />
           </div>
-        ) : (
-          <>
+
+          {/* Preview Mode */}
+          <div
+            className={`h-full transition-transform duration-300 ease-in-out ${
+              viewMode === 'preview'
+                ? 'translate-x-0'
+                : 'translate-x-full absolute inset-0'
+            }`}
+          >
             {isPreviewLoading ? (
               <div className="flex items-center justify-center h-full">
                 <div className="text-gray-500">Loading preview...</div>
@@ -277,8 +423,8 @@ export default function MarkdownEditor({
             ) : (
               <PreviewPane content={content} />
             )}
-          </>
-        )}
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -120,6 +120,7 @@ describe('Header', () => {
 
       // Mobile menu should be closed initially
       expect(screen.queryByText('Signed in as')).not.toBeInTheDocument();
+      expect(menuButton).toHaveAttribute('aria-expanded', 'false');
 
       // Click to open
       fireEvent.click(menuButton);
@@ -127,6 +128,32 @@ describe('Header', () => {
       // Mobile navigation should be visible
       const mobileExploreLinks = screen.getAllByText('Explore');
       expect(mobileExploreLinks).toHaveLength(2); // Desktop and mobile
+      expect(menuButton).toHaveAttribute('aria-expanded', 'true');
+    });
+
+    it('locks body scroll when mobile menu is open', () => {
+      mockUseAuth.mockReturnValue({
+        user: null,
+        loading: false,
+        signIn: vi.fn(),
+        signUp: vi.fn(),
+        signOut: vi.fn(),
+      });
+
+      render(<Header />);
+
+      const menuButton = screen.getByLabelText('Toggle mobile menu');
+
+      // Body should not have overflow hidden initially
+      expect(document.body.style.overflow).toBe('');
+
+      // Open menu
+      fireEvent.click(menuButton);
+      expect(document.body.style.overflow).toBe('hidden');
+
+      // Close menu
+      fireEvent.click(menuButton);
+      expect(document.body.style.overflow).toBe('');
     });
 
     it('closes mobile menu when a link is clicked', () => {

@@ -105,6 +105,19 @@ html[class*="dark"] {
 /* Base styles */
 html {
   font-size: 16px; /* Base for rem calculations */
+  /* Prevent text size adjustment on orientation change */
+  -webkit-text-size-adjust: 100%;
+  -moz-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  /* Smooth scrolling */
+  scroll-behavior: smooth;
+}
+
+/* Responsive font scaling */
+@media (min-width: 768px) {
+  html {
+    font-size: 18px;
+  }
 }
 
 body {
@@ -115,6 +128,10 @@ body {
   line-height: var(--line-height-relaxed);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  /* Prevent horizontal scroll */
+  overflow-x: hidden;
+  /* iOS tap highlight removal */
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Typography base styles */
@@ -132,28 +149,55 @@ h6 {
 }
 
 h1 {
-  font-size: var(--font-size-4xl);
+  font-size: 2rem; /* 32px on mobile */
   font-weight: 700;
 }
 
 h2 {
-  font-size: var(--font-size-3xl);
+  font-size: 1.75rem; /* 28px on mobile */
 }
 
 h3 {
-  font-size: var(--font-size-2xl);
+  font-size: 1.5rem; /* 24px on mobile */
 }
 
 h4 {
-  font-size: var(--font-size-xl);
+  font-size: 1.25rem; /* 20px on mobile */
 }
 
 h5 {
-  font-size: var(--font-size-lg);
+  font-size: 1.125rem; /* 18px on mobile */
 }
 
 h6 {
-  font-size: var(--font-size-base);
+  font-size: 1rem; /* 16px on mobile */
+}
+
+/* Desktop typography scaling */
+@media (min-width: 768px) {
+  h1 {
+    font-size: var(--font-size-4xl);
+  }
+
+  h2 {
+    font-size: var(--font-size-3xl);
+  }
+
+  h3 {
+    font-size: var(--font-size-2xl);
+  }
+
+  h4 {
+    font-size: var(--font-size-xl);
+  }
+
+  h5 {
+    font-size: var(--font-size-lg);
+  }
+
+  h6 {
+    font-size: var(--font-size-base);
+  }
 }
 
 p {
@@ -172,8 +216,25 @@ pre {
   max-width: var(--max-width-content);
   margin-left: auto;
   margin-right: auto;
-  padding-left: 1rem;
-  padding-right: 1rem;
+  /* Safe area padding for iOS devices */
+  padding-left: max(1rem, env(safe-area-inset-left));
+  padding-right: max(1rem, env(safe-area-inset-right));
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Responsive container padding */
+@media (min-width: 640px) {
+  .container {
+    padding-left: max(1.5rem, env(safe-area-inset-left));
+    padding-right: max(1.5rem, env(safe-area-inset-right));
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    padding-left: max(2rem, env(safe-area-inset-left));
+    padding-right: max(2rem, env(safe-area-inset-right));
+  }
 }
 
 /* Utility classes */
@@ -821,4 +882,155 @@ pre {
   .dark\:prose-invert tbody tr {
     border-bottom-color: var(--tw-prose-td-borders);
   }
+}
+
+/* Mobile-specific utilities */
+
+/* Touch-friendly tap targets */
+.touch-target {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Ensure interactive elements have proper spacing on mobile */
+@media (max-width: 767px) {
+  /* Increase button tap areas */
+  button,
+  a[role="button"],
+  input[type="button"],
+  input[type="submit"] {
+    min-height: 44px;
+  }
+
+  /* Add spacing between touch targets */
+  .touch-spacing > * + * {
+    margin-top: 0.75rem;
+  }
+
+  /* Prevent zoom on input focus */
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Responsive text utilities */
+.text-responsive-sm {
+  font-size: 0.875rem;
+}
+
+.text-responsive-base {
+  font-size: 1rem;
+}
+
+.text-responsive-lg {
+  font-size: 1.125rem;
+}
+
+.text-responsive-xl {
+  font-size: 1.25rem;
+}
+
+.text-responsive-2xl {
+  font-size: 1.5rem;
+}
+
+.text-responsive-3xl {
+  font-size: 1.75rem;
+}
+
+.text-responsive-4xl {
+  font-size: 2rem;
+}
+
+@media (min-width: 768px) {
+  .text-responsive-sm {
+    font-size: var(--font-size-sm);
+  }
+  
+  .text-responsive-base {
+    font-size: var(--font-size-base);
+  }
+  
+  .text-responsive-lg {
+    font-size: var(--font-size-lg);
+  }
+  
+  .text-responsive-xl {
+    font-size: var(--font-size-xl);
+  }
+  
+  .text-responsive-2xl {
+    font-size: var(--font-size-2xl);
+  }
+  
+  .text-responsive-3xl {
+    font-size: var(--font-size-3xl);
+  }
+  
+  .text-responsive-4xl {
+    font-size: var(--font-size-4xl);
+  }
+}
+
+/* Safe area utilities */
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}
+
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-left {
+  padding-left: env(safe-area-inset-left);
+}
+
+.safe-right {
+  padding-right: env(safe-area-inset-right);
+}
+
+/* Responsive spacing utilities */
+.p-responsive-4 {
+  padding: 1rem;
+}
+
+.p-responsive-6 {
+  padding: 1.5rem;
+}
+
+.p-responsive-8 {
+  padding: 2rem;
+}
+
+@media (min-width: 768px) {
+  .p-responsive-4 {
+    padding: 1.5rem;
+  }
+  
+  .p-responsive-6 {
+    padding: 2rem;
+  }
+  
+  .p-responsive-8 {
+    padding: 3rem;
+  }
+}
+
+/* Mobile-optimized grid */
+@media (max-width: 767px) {
+  .grid-responsive {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Prevent horizontal scroll */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }
