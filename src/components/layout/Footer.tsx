@@ -82,7 +82,7 @@ export default function Footer() {
                   X.com
                 </a>
                 <a
-                  href="https://github.com"
+                  href="https://github.com/ccarella/currents"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm text-gray-600 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-white py-2 -ml-1 pl-1 rounded hover:bg-gray-50 dark:hover:bg-gray-900"

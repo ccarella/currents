@@ -67,6 +67,14 @@ describe('Footer', () => {
       'href',
       '/contact'
     );
+    expect(screen.getByRole('link', { name: 'X.com' })).toHaveAttribute(
+      'href',
+      'https://x.com/ccarella'
+    );
+    expect(screen.getByRole('link', { name: 'GitHub' })).toHaveAttribute(
+      'href',
+      'https://github.com/ccarella/currents'
+    );
   });
 
   it('external links have proper attributes', () => {
