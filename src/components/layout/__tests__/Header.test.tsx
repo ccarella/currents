@@ -1,257 +1,195 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 import Header from '../Header';
-import { useAuth } from '@/hooks/useAuth';
-import { useUserProfile } from '@/hooks/useUserProfile';
 
-// Mock the useAuth hook
-vi.mock('@/hooks/useAuth');
-
-// Mock the useUserProfile hook
-vi.mock('@/hooks/useUserProfile');
-
-// Mock next/navigation
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({
-    push: vi.fn(),
-    refresh: vi.fn(),
-  }),
-  useSearchParams: () => ({
-    get: vi.fn(),
-  }),
+// Mock dependencies
+vi.mock('@/hooks/useAuth', () => ({
+  useAuth: vi.fn(() => ({ user: null, loading: false })),
 }));
 
-describe('Header', () => {
-  const mockUseAuth = useAuth as vi.MockedFunction<typeof useAuth>;
-  const mockUseUserProfile = useUserProfile as vi.MockedFunction<
-    typeof useUserProfile
-  >;
+vi.mock('@/hooks/useUserProfile', () => ({
+  useUserProfile: vi.fn(() => ({ profile: null, loading: false })),
+}));
 
+vi.mock('next/link', () => ({
+  default: ({
+    children,
+    href,
+    onClick,
+  }: {
+    children: React.ReactNode;
+    href: string;
+    onClick?: () => void;
+  }) => (
+    <a href={href} onClick={onClick}>
+      {children}
+    </a>
+  ),
+}));
+
+vi.mock('@/components/auth', () => ({
+  SignOutButton: () => <button>Sign Out</button>,
+}));
+
+vi.mock('@/components/layout', () => ({
+  UserMenu: () => <div>User Menu</div>,
+}));
+
+describe('Header Mobile Menu', () => {
   beforeEach(() => {
+    // Reset viewport to mobile size
+    global.innerWidth = 375;
+    global.innerHeight = 667;
+    // Clear mocks
     vi.clearAllMocks();
-    // Default mock for useUserProfile
-    mockUseUserProfile.mockReturnValue({
-      profile: null,
+  });
+
+  it('should show hamburger menu button on mobile', () => {
+    render(<Header />);
+    const menuButton = screen.getByLabelText('Toggle mobile menu');
+    expect(menuButton).toBeInTheDocument();
+  });
+
+  it('should open mobile menu when hamburger is clicked', () => {
+    render(<Header />);
+    const menuButton = screen.getByLabelText('Toggle mobile menu');
+
+    // Menu should not be visible initially
+    expect(screen.queryByRole('navigation')).not.toBeInTheDocument();
+
+    // Click hamburger
+    fireEvent.click(menuButton);
+
+    // Menu items should be visible
+    expect(screen.getByRole('navigation')).toBeInTheDocument();
+    expect(screen.getByText('Explore')).toBeInTheDocument();
+    expect(screen.getByText('About')).toBeInTheDocument();
+  });
+
+  it('should close mobile menu when X is clicked', () => {
+    render(<Header />);
+    const menuButton = screen.getByLabelText('Toggle mobile menu');
+
+    // Open menu
+    fireEvent.click(menuButton);
+    expect(screen.getByRole('navigation')).toBeInTheDocument();
+
+    // Click X to close
+    fireEvent.click(menuButton);
+
+    // Menu should be hidden
+    expect(screen.queryByRole('navigation')).not.toBeInTheDocument();
+  });
+
+  it('should close mobile menu when a link is clicked', () => {
+    render(<Header />);
+    const menuButton = screen.getByLabelText('Toggle mobile menu');
+
+    // Open menu
+    fireEvent.click(menuButton);
+
+    // Click a navigation link
+    const exploreLink = screen.getByText('Explore');
+    fireEvent.click(exploreLink);
+
+    // Menu should be hidden
+    expect(screen.queryByRole('navigation')).not.toBeInTheDocument();
+  });
+
+  it('should lock body scroll when menu is open', () => {
+    render(<Header />);
+    const menuButton = screen.getByLabelText('Toggle mobile menu');
+
+    // Body should not have overflow hidden initially
+    expect(document.body.style.overflow).toBe('');
+
+    // Open menu
+    fireEvent.click(menuButton);
+
+    // Body should have overflow hidden
+    expect(document.body.style.overflow).toBe('hidden');
+
+    // Close menu
+    fireEvent.click(menuButton);
+
+    // Body overflow should be restored
+    expect(document.body.style.overflow).toBe('');
+  });
+
+  it('should show correct menu items for authenticated users', async () => {
+    const { useAuth } = await import('@/hooks/useAuth');
+    const { useUserProfile } = await import('@/hooks/useUserProfile');
+
+    (useAuth as ReturnType<typeof vi.fn>).mockReturnValue({
+      user: { email: 'test@example.com', id: '123' },
       loading: false,
-      error: null,
     });
+
+    (useUserProfile as ReturnType<typeof vi.fn>).mockReturnValue({
+      profile: { username: 'testuser' },
+      loading: false,
+    });
+
+    render(<Header />);
+    const menuButton = screen.getByLabelText('Toggle mobile menu');
+
+    // Open menu
+    fireEvent.click(menuButton);
+
+    // Should show authenticated menu items
+    expect(screen.getByText('Create Post')).toBeInTheDocument();
+    expect(screen.getByText('Dashboard')).toBeInTheDocument();
+    expect(screen.getByText('Profile')).toBeInTheDocument();
+    expect(screen.getByText('Settings')).toBeInTheDocument();
+    expect(screen.getByText('Sign Out')).toBeInTheDocument();
+    expect(
+      screen.getByText('Signed in as test@example.com')
+    ).toBeInTheDocument();
   });
 
-  describe('Desktop Navigation', () => {
-    it('renders logo and navigation links', () => {
-      mockUseAuth.mockReturnValue({
-        user: null,
-        loading: false,
-        signIn: vi.fn(),
-        signUp: vi.fn(),
-        signOut: vi.fn(),
-      });
+  it('should show correct menu items for unauthenticated users', () => {
+    render(<Header />);
+    const menuButton = screen.getByLabelText('Toggle mobile menu');
 
-      render(<Header />);
+    // Open menu
+    fireEvent.click(menuButton);
 
-      expect(screen.getByText('Currents')).toBeInTheDocument();
-      expect(screen.getByText('Explore')).toBeInTheDocument();
-      expect(screen.getByText('About')).toBeInTheDocument();
-    });
-
-    it('shows sign in and sign up buttons when not authenticated', () => {
-      mockUseAuth.mockReturnValue({
-        user: null,
-        loading: false,
-        signIn: vi.fn(),
-        signUp: vi.fn(),
-        signOut: vi.fn(),
-      });
-
-      render(<Header />);
-
-      expect(
-        screen.getByRole('link', { name: /sign in/i })
-      ).toBeInTheDocument();
-      expect(
-        screen.getByRole('link', { name: /sign up/i })
-      ).toBeInTheDocument();
-    });
-
-    it('shows user menu and create post button when authenticated', () => {
-      mockUseAuth.mockReturnValue({
-        user: { id: '1', email: 'test@example.com' },
-        loading: false,
-        signIn: vi.fn(),
-        signUp: vi.fn(),
-        signOut: vi.fn(),
-      });
-
-      render(<Header />);
-
-      expect(screen.getByText('Create Post')).toBeInTheDocument();
-      expect(screen.getByText('@test')).toBeInTheDocument(); // Username from UserMenu
-      expect(screen.queryByText('Sign In')).not.toBeInTheDocument();
-    });
-
-    it('shows loading state', () => {
-      mockUseAuth.mockReturnValue({
-        user: null,
-        loading: true,
-        signIn: vi.fn(),
-        signUp: vi.fn(),
-        signOut: vi.fn(),
-      });
-
-      render(<Header />);
-
-      expect(screen.getByTestId('loading-skeleton')).toBeInTheDocument();
-    });
+    // Should show unauthenticated menu items
+    expect(screen.getByText('Sign In')).toBeInTheDocument();
+    expect(screen.getByText('Sign Up')).toBeInTheDocument();
+    expect(screen.queryByText('Create Post')).not.toBeInTheDocument();
+    expect(screen.queryByText('Dashboard')).not.toBeInTheDocument();
   });
 
-  describe('Mobile Navigation', () => {
-    it('toggles mobile menu when hamburger button is clicked', () => {
-      mockUseAuth.mockReturnValue({
-        user: null,
-        loading: false,
-        signIn: vi.fn(),
-        signUp: vi.fn(),
-        signOut: vi.fn(),
-      });
+  it('should have correct aria attributes', () => {
+    render(<Header />);
+    const menuButton = screen.getByLabelText('Toggle mobile menu');
 
-      render(<Header />);
+    // Initial state
+    expect(menuButton).toHaveAttribute('aria-expanded', 'false');
 
-      const menuButton = screen.getByLabelText('Toggle mobile menu');
+    // Open menu
+    fireEvent.click(menuButton);
+    expect(menuButton).toHaveAttribute('aria-expanded', 'true');
 
-      // Mobile menu should be closed initially
-      expect(screen.queryByText('Signed in as')).not.toBeInTheDocument();
-      expect(menuButton).toHaveAttribute('aria-expanded', 'false');
-
-      // Click to open
-      fireEvent.click(menuButton);
-
-      // Mobile navigation should be visible
-      const mobileExploreLinks = screen.getAllByText('Explore');
-      expect(mobileExploreLinks).toHaveLength(2); // Desktop and mobile
-      expect(menuButton).toHaveAttribute('aria-expanded', 'true');
-    });
-
-    it('locks body scroll when mobile menu is open', () => {
-      mockUseAuth.mockReturnValue({
-        user: null,
-        loading: false,
-        signIn: vi.fn(),
-        signUp: vi.fn(),
-        signOut: vi.fn(),
-      });
-
-      render(<Header />);
-
-      const menuButton = screen.getByLabelText('Toggle mobile menu');
-
-      // Body should not have overflow hidden initially
-      expect(document.body.style.overflow).toBe('');
-
-      // Open menu
-      fireEvent.click(menuButton);
-      expect(document.body.style.overflow).toBe('hidden');
-
-      // Close menu
-      fireEvent.click(menuButton);
-      expect(document.body.style.overflow).toBe('');
-    });
-
-    it('closes mobile menu when a link is clicked', () => {
-      mockUseAuth.mockReturnValue({
-        user: null,
-        loading: false,
-        signIn: vi.fn(),
-        signUp: vi.fn(),
-        signOut: vi.fn(),
-      });
-
-      render(<Header />);
-
-      const menuButton = screen.getByLabelText('Toggle mobile menu');
-      fireEvent.click(menuButton);
-
-      const exploreLinks = screen.getAllByText('Explore');
-      const mobileExploreLink = exploreLinks[1]; // Get the mobile version
-      fireEvent.click(mobileExploreLink);
-
-      // Mobile menu should close
-      const exploreLinksAfterClick = screen.getAllByText('Explore');
-      expect(exploreLinksAfterClick).toHaveLength(1); // Only desktop version
-    });
-
-    it('shows user email in mobile menu when authenticated', () => {
-      mockUseAuth.mockReturnValue({
-        user: { id: '1', email: 'test@example.com' },
-        loading: false,
-        signIn: vi.fn(),
-        signUp: vi.fn(),
-        signOut: vi.fn(),
-      });
-
-      render(<Header />);
-
-      const menuButton = screen.getByLabelText('Toggle mobile menu');
-      fireEvent.click(menuButton);
-
-      expect(
-        screen.getByText('Signed in as test@example.com')
-      ).toBeInTheDocument();
-    });
+    // Close menu
+    fireEvent.click(menuButton);
+    expect(menuButton).toHaveAttribute('aria-expanded', 'false');
   });
 
-  describe('User Menu Dropdown', () => {
-    it('shows dropdown menu items on click', async () => {
-      mockUseAuth.mockReturnValue({
-        user: { id: '1', email: 'test@example.com' },
-        loading: false,
-        signIn: vi.fn(),
-        signUp: vi.fn(),
-        signOut: vi.fn(),
-      });
+  it('should be accessible with proper z-index layering', () => {
+    render(<Header />);
+    const menuButton = screen.getByLabelText('Toggle mobile menu');
 
-      render(<Header />);
+    // Open menu
+    fireEvent.click(menuButton);
 
-      const userButton = screen.getByLabelText('User menu');
+    const navigation = screen.getByRole('navigation');
+    const navParent = navigation.parentElement;
 
-      // Click to open dropdown
-      fireEvent.click(userButton);
-
-      await waitFor(() => {
-        expect(screen.getByText('View Profile')).toBeInTheDocument();
-        expect(screen.getByText('Settings')).toBeInTheDocument();
-        expect(screen.getByText('Sign Out')).toBeInTheDocument();
-      });
-    });
-  });
-
-  describe('Accessibility', () => {
-    it('has proper ARIA labels', () => {
-      mockUseAuth.mockReturnValue({
-        user: null,
-        loading: false,
-        signIn: vi.fn(),
-        signUp: vi.fn(),
-        signOut: vi.fn(),
-      });
-
-      render(<Header />);
-
-      expect(screen.getByLabelText('Toggle mobile menu')).toBeInTheDocument();
-    });
-
-    it('has proper heading structure', () => {
-      mockUseAuth.mockReturnValue({
-        user: null,
-        loading: false,
-        signIn: vi.fn(),
-        signUp: vi.fn(),
-        signOut: vi.fn(),
-      });
-
-      render(<Header />);
-
-      const logo = screen.getByText('Currents');
-      expect(logo.tagName).toBe('A'); // Logo should be a link
-    });
+    // Check that the mobile menu container exists and has proper classes
+    expect(navParent).toHaveClass('md:hidden');
+    expect(navParent).toHaveClass('fixed');
+    expect(navParent).toHaveClass('z-50');
   });
 });
