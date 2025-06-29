@@ -205,6 +205,7 @@ export default function PlainTextEditor({
             placeholder={placeholder}
             className="w-full h-full resize-none border-none outline-none text-lg leading-relaxed"
             aria-label="Plain text editor"
+            data-testid="plain-text-editor"
           />
         </div>
       </div>

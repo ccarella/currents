@@ -42,22 +42,12 @@ export async function createPost(data: {
   // Generate slug from title if not provided
   const slug = data.slug || generateSlug(data.title);
 
-  // Extract excerpt from content (first 160 characters)
-  const excerpt =
-    data.content.substring(0, 160).trim() +
-    (data.content.length > 160 ? '...' : '');
-
   const postData: PostInsert = {
     title: data.title,
     content: data.content,
     slug,
-    excerpt,
     author_id: user.user.id,
     status: data.status || 'draft',
-    // Set published_at if status is published
-    ...(data.status === 'published' && {
-      published_at: new Date().toISOString(),
-    }),
   };
 
   const { data: post, error } = await supabase
@@ -92,27 +82,7 @@ export async function updatePost(
     updateData.slug = generateSlug(data.title);
   }
 
-  // Update excerpt if content is provided
-  if (data.content) {
-    updateData.excerpt =
-      data.content.substring(0, 160).trim() +
-      (data.content.length > 160 ? '...' : '');
-  }
-
-  // Set published_at if status is being changed to published
-  if (data.status === 'published') {
-    // First check if post is already published to preserve original timestamp
-    const { data: existingPost } = await supabase
-      .from('posts')
-      .select('status, published_at')
-      .eq('id', id)
-      .single();
-
-    // Only update published_at if status is changing from non-published to published
-    if (existingPost && existingPost.status !== 'published') {
-      updateData.published_at = new Date().toISOString();
-    }
-  }
+  // No need to update excerpt or published_at as they don't exist in the schema
 
   const { data: post, error } = await supabase
     .from('posts')

@@ -157,7 +157,10 @@ export function useUpdatePost() {
         cleanUpdates.content = updates.content;
       }
       if (updates.status !== undefined && updates.status !== null) {
-        cleanUpdates.status = updates.status;
+        cleanUpdates.status = updates.status as
+          | 'draft'
+          | 'published'
+          | 'archived';
       }
       return updatePost(id, cleanUpdates);
     },
