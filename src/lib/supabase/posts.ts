@@ -42,13 +42,22 @@ export async function createPost(data: {
   // Generate slug from title if not provided
   const slug = data.slug || generateSlug(data.title);
 
+  // Generate excerpt from content
+  const excerpt = generateExcerpt(data.content);
+
   const postData: PostInsert = {
     title: data.title,
     content: data.content,
+    excerpt,
     slug,
     author_id: user.user.id,
     status: data.status || 'draft',
   };
+
+  // Set published_at if status is published
+  if (data.status === 'published') {
+    postData.published_at = new Date().toISOString();
+  }
 
   const { data: post, error } = await supabase
     .from('posts')
@@ -57,6 +66,15 @@ export async function createPost(data: {
     .single();
 
   if (error) {
+    // Enhance error message for constraint violations
+    if (
+      error.code === '23514' &&
+      error.message?.includes('published_date_consistency')
+    ) {
+      throw new Error(
+        'Cannot publish post without a publication date. This should not happen - please report this issue.'
+      );
+    }
     throw error;
   }
 
@@ -82,7 +100,19 @@ export async function updatePost(
     updateData.slug = generateSlug(data.title);
   }
 
-  // No need to update excerpt or published_at as they don't exist in the schema
+  // Update excerpt if content is provided
+  if (data.content) {
+    updateData.excerpt = generateExcerpt(data.content);
+  }
+
+  // Handle published_at based on status changes
+  if (data.status === 'published') {
+    // Set published_at when publishing
+    updateData.published_at = new Date().toISOString();
+  } else if (data.status === 'draft' || data.status === 'archived') {
+    // Clear published_at when unpublishing
+    updateData.published_at = null;
+  }
 
   const { data: post, error } = await supabase
     .from('posts')
@@ -92,6 +122,15 @@ export async function updatePost(
     .single();
 
   if (error) {
+    // Enhance error message for constraint violations
+    if (
+      error.code === '23514' &&
+      error.message?.includes('published_date_consistency')
+    ) {
+      throw new Error(
+        'Cannot publish post without a publication date. This should not happen - please report this issue.'
+      );
+    }
     throw error;
   }
 
@@ -171,4 +210,27 @@ function generateSlug(title: string): string {
   const randomStr = Math.random().toString(36).substring(2, 6); // 4 random chars
 
   return `${baseSlug}-${timestamp}-${randomStr}`.substring(0, 100);
+}
+
+function generateExcerpt(content: string): string {
+  // Strip HTML tags if any
+  const plainText = content.replace(/<[^>]*>/g, '');
+
+  // Truncate to 160 characters (leaving room for ellipsis)
+  if (plainText.length <= 160) {
+    return plainText;
+  }
+
+  // Find a good break point (end of word)
+  let cutoff = 160;
+  while (cutoff > 0 && plainText[cutoff] !== ' ') {
+    cutoff--;
+  }
+
+  // If we couldn't find a space, just use the full 160
+  if (cutoff === 0) {
+    cutoff = 160;
+  }
+
+  return plainText.substring(0, cutoff).trim() + '...';
 }

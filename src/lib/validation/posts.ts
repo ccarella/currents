@@ -3,6 +3,7 @@ import { z } from 'zod';
 export const createPostSchema = z.object({
   title: z.string().min(1, 'Title is required').max(255, 'Title is too long'),
   content: z.string().optional(),
+  excerpt: z.string().max(500, 'Excerpt is too long').optional(),
   status: z.enum(['draft', 'published']).default('published'),
 });
 
