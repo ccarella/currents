@@ -13,30 +13,36 @@ export interface Database {
         Row: {
           id: string;
           title: string;
-          content: string;
+          content: string | null;
+          excerpt: string | null;
           slug: string;
           author_id: string;
           status: string;
+          published_at: string | null;
           created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: string;
           title: string;
-          content: string;
+          content?: string | null;
+          excerpt?: string | null;
           slug: string;
           author_id: string;
           status?: string;
+          published_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: string;
           title?: string;
-          content?: string;
+          content?: string | null;
+          excerpt?: string | null;
           slug?: string;
           author_id?: string;
           status?: string;
+          published_at?: string | null;
           created_at?: string;
           updated_at?: string;
         };
@@ -44,8 +50,9 @@ export interface Database {
       profiles: {
         Row: {
           id: string;
-          username: string;
+          username: string | null;
           email: string;
+          full_name: string | null;
           bio: string | null;
           avatar_url: string | null;
           created_at: string;
@@ -53,8 +60,9 @@ export interface Database {
         };
         Insert: {
           id: string;
-          username: string;
+          username?: string | null;
           email: string;
+          full_name?: string | null;
           bio?: string | null;
           avatar_url?: string | null;
           created_at?: string;
@@ -62,12 +70,47 @@ export interface Database {
         };
         Update: {
           id?: string;
-          username?: string;
+          username?: string | null;
           email?: string;
+          full_name?: string | null;
           bio?: string | null;
           avatar_url?: string | null;
           created_at?: string;
           updated_at?: string;
+        };
+      };
+      tags: {
+        Row: {
+          id: string;
+          name: string;
+          slug: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          slug: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          slug?: string;
+          created_at?: string;
+        };
+      };
+      post_tags: {
+        Row: {
+          post_id: string;
+          tag_id: string;
+        };
+        Insert: {
+          post_id: string;
+          tag_id: string;
+        };
+        Update: {
+          post_id?: string;
+          tag_id?: string;
         };
       };
     };
@@ -78,7 +121,7 @@ export interface Database {
       [_ in never]: never;
     };
     Enums: {
-      [_ in never]: never;
+      post_status: 'draft' | 'published' | 'archived';
     };
     CompositeTypes: {
       [_ in never]: never;
