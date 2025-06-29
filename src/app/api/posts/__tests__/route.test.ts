@@ -11,12 +11,16 @@ vi.mock('@/lib/supabase/auth', () => ({
   requireAuth: vi.fn(),
 }));
 
+// Create a mock PostsService instance
+const mockPostsServiceInstance = {
+  generateSlug: vi.fn((title) => title.toLowerCase().replace(/\s+/g, '-')),
+  archiveUserPosts: vi.fn(),
+  createPost: vi.fn(),
+  getLatestPostPerUserPaginated: vi.fn(),
+};
+
 vi.mock('@/lib/posts', () => ({
-  PostsService: vi.fn().mockImplementation(() => ({
-    generateSlug: vi.fn((title) => title.toLowerCase().replace(/\s+/g, '-')),
-    archiveUserPosts: vi.fn(),
-    createPost: vi.fn(),
-  })),
+  PostsService: vi.fn(() => mockPostsServiceInstance),
 }));
 
 interface MockSupabase {
@@ -67,10 +71,11 @@ describe('GET /api/posts', () => {
       },
     ];
 
-    mockSupabase.range.mockResolvedValue({
-      data: mockPosts,
-      error: null,
-      count: 1,
+    // Mock the PostsService method
+    mockPostsServiceInstance.getLatestPostPerUserPaginated.mockResolvedValue({
+      posts: mockPosts,
+      totalCount: 1,
+      hasMore: false,
     });
 
     const request = new NextRequest('http://localhost:3000/api/posts');
@@ -90,11 +95,15 @@ describe('GET /api/posts', () => {
   });
 
   it('should handle custom pagination parameters', async () => {
-    mockSupabase.range.mockResolvedValue({
-      data: [],
-      error: null,
-      count: 50,
+    // Mock the PostsService method
+    const { PostsService } = await import('@/lib/posts');
+    const mockInstance = new PostsService(mockSupabase);
+    vi.mocked(mockInstance.getLatestPostPerUserPaginated).mockResolvedValue({
+      posts: [],
+      totalCount: 50,
+      hasMore: true,
     });
+    vi.mocked(PostsService).mockImplementation(() => mockInstance);
 
     const request = new NextRequest(
       'http://localhost:3000/api/posts?page=2&limit=10'
@@ -103,7 +112,10 @@ describe('GET /api/posts', () => {
     const data = await response.json();
 
     expect(response.status).toBe(200);
-    expect(mockSupabase.range).toHaveBeenCalledWith(10, 19); // offset=10, limit=10
+    expect(mockInstance.getLatestPostPerUserPaginated).toHaveBeenCalledWith(
+      2,
+      10
+    );
     expect(data.pagination.page).toBe(2);
     expect(data.pagination.limit).toBe(10);
     expect(data.pagination.totalPages).toBe(5);
@@ -124,18 +136,20 @@ describe('GET /api/posts', () => {
   });
 
   it('should handle database errors', async () => {
-    mockSupabase.range.mockResolvedValue({
-      data: null,
-      error: { message: 'Database error' },
-      count: null,
-    });
+    // Mock the PostsService method to throw an error
+    const { PostsService } = await import('@/lib/posts');
+    const mockInstance = new PostsService(mockSupabase);
+    vi.mocked(mockInstance.getLatestPostPerUserPaginated).mockRejectedValue(
+      new Error('Database error')
+    );
+    vi.mocked(PostsService).mockImplementation(() => mockInstance);
 
     const request = new NextRequest('http://localhost:3000/api/posts');
     const response = await GET(request);
     const data = await response.json();
 
     expect(response.status).toBe(500);
-    expect(data.error).toBe('Failed to fetch posts');
+    expect(data.error).toBe('Internal server error');
   });
 });
 

@@ -115,6 +115,43 @@ export class PostsService {
   }
 
   /**
+   * Get paginated posts showing only the most recent post per user
+   */
+  async getLatestPostPerUserPaginated(page: number = 1, limit: number = 20) {
+    const from = (page - 1) * limit;
+    const to = from + limit - 1;
+
+    const {
+      data: posts,
+      error,
+      count,
+    } = await this.supabase
+      .from('latest_posts_per_user')
+      .select(
+        `
+        *,
+        profiles!inner(
+          id,
+          username,
+          full_name,
+          avatar_url
+        )
+      `,
+        { count: 'exact' }
+      )
+      .order('created_at', { ascending: false })
+      .range(from, to);
+
+    if (error) throw error;
+
+    return {
+      posts: posts || [],
+      totalCount: count || 0,
+      hasMore: (count || 0) > to + 1,
+    };
+  }
+
+  /**
    * Get a post by slug
    */
   async getPostBySlug(slug: string) {

@@ -48,53 +48,33 @@ export async function GET(request: NextRequest) {
     }
 
     const { page, limit } = validationResult.data;
-    const offset = (page - 1) * limit;
 
     const supabase = await createClient();
+    const postsService = new PostsService(supabase);
 
-    // Get posts with profile information
-    const {
-      data: posts,
-      error,
-      count,
-    } = await supabase
-      .from('posts')
-      .select(
-        `
-        *,
-        profiles!inner(
-          id,
-          username,
-          full_name,
-          avatar_url
-        )
-        `,
-        { count: 'exact' }
-      )
-      .eq('status', 'published')
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
+    // Get only the most recent post per user
+    const result = await postsService.getLatestPostPerUserPaginated(
+      page,
+      limit
+    );
 
-    if (error) {
-      console.error('Error fetching posts:', error);
-      return NextResponse.json(
-        { error: 'Failed to fetch posts' },
-        { status: 500 }
-      );
-    }
-
-    const totalPages = count ? Math.ceil(count / limit) : 0;
+    const totalPages = result.totalCount
+      ? Math.ceil(result.totalCount / limit)
+      : 0;
 
     return NextResponse.json({
-      posts: posts || [],
+      posts: result.posts,
       pagination: {
         page,
         limit,
-        total: count || 0,
+        total: result.totalCount,
         totalPages,
         hasNext: page < totalPages,
         hasPrev: page > 1,
       },
+      // Additional fields from the service
+      totalCount: result.totalCount,
+      hasMore: result.hasMore,
     });
   } catch (error) {
     console.error('Unexpected error in GET /api/posts:', error);
