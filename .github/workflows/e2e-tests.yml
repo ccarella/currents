@@ -161,7 +161,7 @@ jobs:
             echo "Supabase environment variables not configured. Skipping performance tests."
             exit 0
           fi
-          npx playwright test performance.spec.ts --project=chromium || true
+          npx playwright test performance.spec.ts --project=chromium
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
