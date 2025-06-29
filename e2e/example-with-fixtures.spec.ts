@@ -168,7 +168,8 @@ test.describe('Example Tests with Fixtures', () => {
 
 // Example of using test.afterEach for cleanup
 test.describe('Tests with automatic cleanup', () => {
-  let fixture: { cleanup: () => Promise<void> } | null = null;
+  let fixture: Awaited<ReturnType<typeof testFixtures.userWithPost>> | null =
+    null;
 
   test.afterEach(async () => {
     // Clean up any fixtures created during the test

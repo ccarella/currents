@@ -56,13 +56,13 @@ async function getPerformanceMetrics(page: Page) {
       ).memory
         ? {
             usedJSHeapSize: (
-              performance as { memory: { usedJSHeapSize: number } }
+              performance as unknown as { memory: { usedJSHeapSize: number } }
             ).memory.usedJSHeapSize,
             totalJSHeapSize: (
-              performance as { memory: { totalJSHeapSize: number } }
+              performance as unknown as { memory: { totalJSHeapSize: number } }
             ).memory.totalJSHeapSize,
             jsHeapSizeLimit: (
-              performance as { memory: { jsHeapSizeLimit: number } }
+              performance as unknown as { memory: { jsHeapSizeLimit: number } }
             ).memory.jsHeapSizeLimit,
           }
         : null,
