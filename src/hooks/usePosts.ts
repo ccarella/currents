@@ -35,7 +35,7 @@ export function useInfinitePosts() {
     queryFn: async ({ pageParam = 1 }) => {
       const supabase = createClient();
       const postsService = new PostsService(supabase);
-      const { posts } = await postsService.getActivePostsPaginated(
+      const { posts } = await postsService.getLatestPostPerUserPaginated(
         pageParam,
         20
       );
