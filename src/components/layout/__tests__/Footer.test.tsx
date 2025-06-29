@@ -29,7 +29,7 @@ describe('Footer', () => {
 
     // Connect links
     expect(screen.getByText('Connect')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Twitter' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'X.com' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'GitHub' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Contact' })).toBeInTheDocument();
   });
@@ -84,12 +84,12 @@ describe('Footer', () => {
   it('external links have proper attributes', () => {
     render(<Footer />);
 
-    const twitterLink = screen.getByRole('link', { name: 'Twitter' });
+    const xLink = screen.getByRole('link', { name: 'X.com' });
     const githubLink = screen.getByRole('link', { name: 'GitHub' });
 
     // Check external link attributes
-    expect(twitterLink).toHaveAttribute('target', '_blank');
-    expect(twitterLink).toHaveAttribute('rel', 'noopener noreferrer');
+    expect(xLink).toHaveAttribute('target', '_blank');
+    expect(xLink).toHaveAttribute('rel', 'noopener noreferrer');
     expect(githubLink).toHaveAttribute('target', '_blank');
     expect(githubLink).toHaveAttribute('rel', 'noopener noreferrer');
   });
