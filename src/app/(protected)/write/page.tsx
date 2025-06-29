@@ -56,6 +56,13 @@ function getErrorMessage(err: unknown): string {
     if (error.code === '23505') {
       return 'A post with this title already exists. Please try a different title.';
     }
+
+    if (
+      error.code === '23514' &&
+      error.message?.includes('published_date_consistency')
+    ) {
+      return 'Cannot publish post without a publication date. Please try again.';
+    }
   }
 
   return 'An unexpected error occurred. Please try again.';
