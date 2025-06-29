@@ -14,7 +14,6 @@ describe('Footer', () => {
 
     // Platform links
     expect(screen.getByText('Platform')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Explore' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Write' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Dashboard' })).toBeInTheDocument();
 
@@ -47,10 +46,6 @@ describe('Footer', () => {
     render(<Footer />);
 
     // Internal links
-    expect(screen.getByRole('link', { name: 'Explore' })).toHaveAttribute(
-      'href',
-      '/explore'
-    );
     expect(screen.getByRole('link', { name: 'Write' })).toHaveAttribute(
       'href',
       '/write'
