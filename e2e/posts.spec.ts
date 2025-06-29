@@ -140,7 +140,7 @@ test.describe('Post Creation', () => {
     const updatedTitle = `Updated Post ${timestamp}`;
     const updatedContent = `Updated content ${timestamp}`;
 
-    await page.fill('input[value*="${originalTitle}"]', updatedTitle);
+    await page.fill(`input[value*="${originalTitle}"]`, updatedTitle);
     await editor.click();
     await editor.fill(updatedContent);
 
