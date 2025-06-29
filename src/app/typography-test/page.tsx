@@ -291,11 +291,11 @@ console.log(message); // Output: Hello, World!`}</code>
           design system.
         </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-primary-100 dark:bg-primary-900 p-4 rounded">
+          <div className="bg-primary-100 p-4 rounded">
             <h3 className="font-sans">Column 1</h3>
             <p>This layout responds to different screen sizes.</p>
           </div>
-          <div className="bg-primary-100 dark:bg-primary-900 p-4 rounded">
+          <div className="bg-primary-100 p-4 rounded">
             <h3 className="font-sans">Column 2</h3>
             <p>On mobile, these columns stack vertically.</p>
           </div>

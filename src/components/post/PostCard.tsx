@@ -22,7 +22,7 @@ export default function PostCard({ post }: PostCardProps) {
   });
 
   return (
-    <article className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+    <article className="bg-white rounded-lg shadow p-6">
       <div className="flex items-start space-x-3">
         <div className="flex-shrink-0">
           {post.profiles.avatar_url ? (
@@ -34,8 +34,8 @@ export default function PostCard({ post }: PostCardProps) {
               height={40}
             />
           ) : (
-            <div className="h-10 w-10 rounded-full bg-gray-300 dark:bg-gray-600 flex items-center justify-center">
-              <span className="text-gray-600 dark:text-gray-400 font-medium">
+            <div className="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+              <span className="text-gray-600 font-medium">
                 {(post.profiles.full_name || post.profiles.username)
                   .charAt(0)
                   .toUpperCase()}
@@ -45,22 +45,18 @@ export default function PostCard({ post }: PostCardProps) {
         </div>
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
+            <p className="text-sm font-medium text-gray-900">
               {post.profiles.full_name || post.profiles.username}
             </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400">
-              {formattedDate}
-            </p>
+            <p className="text-sm text-gray-500">{formattedDate}</p>
           </div>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            @{post.profiles.username}
-          </p>
+          <p className="text-sm text-gray-500">@{post.profiles.username}</p>
           {post.title && (
-            <h3 className="mt-3 text-lg font-semibold text-gray-900 dark:text-gray-100">
+            <h3 className="mt-3 text-lg font-semibold text-gray-900">
               {post.title}
             </h3>
           )}
-          <p className="mt-2 text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+          <p className="mt-2 text-gray-700 whitespace-pre-wrap">
             {post.content}
           </p>
         </div>

@@ -9,7 +9,6 @@ describe('Skeleton', () => {
     expect(skeleton).toHaveClass('animate-pulse');
     expect(skeleton).toHaveClass('rounded-md');
     expect(skeleton).toHaveClass('bg-gray-200');
-    expect(skeleton).toHaveClass('dark:bg-gray-800');
   });
 
   it('applies custom className', () => {

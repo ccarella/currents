@@ -8,13 +8,7 @@ describe('PostCardSkeleton', () => {
     // Should have article wrapper
     const article = container.querySelector('article');
     expect(article).toBeInTheDocument();
-    expect(article).toHaveClass(
-      'bg-white',
-      'dark:bg-gray-800',
-      'rounded-lg',
-      'shadow',
-      'p-6'
-    );
+    expect(article).toHaveClass('bg-white', 'rounded-lg', 'shadow', 'p-6');
   });
 
   it('renders avatar skeleton', () => {

@@ -94,13 +94,9 @@ export function UserMenu() {
   const getItemClass = (index: number) => {
     const baseClass =
       'block px-4 py-2 text-sm transition-colors focus:outline-none';
-    const focusClass =
-      focusedIndex === index ? 'bg-gray-100 dark:bg-gray-800' : '';
-    const hoverClass = 'hover:bg-gray-100 dark:hover:bg-gray-800';
-    const textClass =
-      index === 1
-        ? 'text-gray-500 dark:text-gray-500'
-        : 'text-gray-700 dark:text-gray-300';
+    const focusClass = focusedIndex === index ? 'bg-gray-100' : '';
+    const hoverClass = 'hover:bg-gray-100';
+    const textClass = index === 1 ? 'text-gray-500' : 'text-gray-700';
 
     const classes = [baseClass, textClass];
     if (focusedIndex !== index) {
@@ -124,7 +120,7 @@ export function UserMenu() {
         ref={buttonRef}
         id="user-menu-button"
         onClick={handleToggle}
-        className="flex items-center gap-2 text-sm font-medium text-gray-700 transition-colors hover:text-gray-900 dark:text-gray-300 dark:hover:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-md px-2 py-1"
+        className="flex items-center gap-2 text-sm font-medium text-gray-700 transition-colors hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 rounded-md px-2 py-1"
         aria-label="User menu"
         aria-expanded={open}
         aria-haspopup="true"
@@ -144,7 +140,7 @@ export function UserMenu() {
           }`}
         >
           <div
-            className="rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 dark:bg-gray-900 dark:ring-gray-800"
+            className="rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5"
             role="menu"
             aria-orientation="vertical"
             aria-labelledby="user-menu-button"
@@ -167,7 +163,7 @@ export function UserMenu() {
             >
               Settings
             </Link>
-            <hr className="my-1 border-gray-200 dark:border-gray-800" />
+            <hr className="my-1 border-gray-200" />
             <div className="px-4 py-2">
               <SignOutButton />
             </div>

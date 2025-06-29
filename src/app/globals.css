@@ -62,45 +62,6 @@
   --ring: #0ea5e9;
 }
 
-/* 
- * Light Mode Enforcement
- * 
- * This application is designed to always use light mode for consistency
- * and brand requirements. While we understand some users prefer dark mode
- * for accessibility reasons, this decision was made to ensure a consistent
- * user experience across all contexts.
- * 
- * Future considerations: We may explore adding user-controlled theme
- * preferences in a future update.
- */
-
-/* Ensure light mode CSS variables are always active */
-/* Using attribute selector for higher specificity without !important */
-html[class*="light"],
-html:not([class*="dark"]) {
-  --background: #ffffff;
-  --foreground: #111827;
-  --muted: #f9fafb;
-  --muted-foreground: #6b7280;
-  --accent: #f3f4f6;
-  --accent-foreground: #111827;
-  --border: #e5e7eb;
-  --ring: #0ea5e9;
-}
-
-/* Override dark mode if it's ever applied */
-/* Double selector for increased specificity */
-html.dark,
-html[class*="dark"] {
-  --background: #ffffff;
-  --foreground: #111827;
-  --muted: #f9fafb;
-  --muted-foreground: #6b7280;
-  --accent: #f3f4f6;
-  --accent-foreground: #111827;
-  --border: #e5e7eb;
-  --ring: #0ea5e9;
-}
 
 /* Base styles */
 html {
@@ -551,12 +512,6 @@ pre {
   height: 4rem;
 }
 
-/* Dark mode utilities */
-@media (prefers-color-scheme: dark) {
-  .dark\:bg-primary-900 {
-    background-color: var(--color-primary-900);
-  }
-}
 
 /* Markdown Editor Customizations */
 .w-md-editor {
@@ -836,53 +791,6 @@ pre {
   margin-bottom: 0;
 }
 
-@media (prefers-color-scheme: dark) {
-  .dark\:prose-invert {
-    color: var(--tw-prose-body);
-  }
-  
-  .dark\:prose-invert h1,
-  .dark\:prose-invert h2,
-  .dark\:prose-invert h3,
-  .dark\:prose-invert h4,
-  .dark\:prose-invert th {
-    color: var(--tw-prose-headings);
-  }
-  
-  .dark\:prose-invert a {
-    color: var(--tw-prose-links);
-  }
-  
-  .dark\:prose-invert strong {
-    color: var(--tw-prose-bold);
-  }
-  
-  .dark\:prose-invert code {
-    color: var(--tw-prose-code);
-  }
-  
-  .dark\:prose-invert blockquote {
-    color: var(--tw-prose-quotes);
-    border-left-color: var(--tw-prose-quote-borders);
-  }
-  
-  .dark\:prose-invert pre {
-    color: var(--tw-prose-pre-code);
-    background-color: var(--tw-prose-pre-bg);
-  }
-  
-  .dark\:prose-invert hr {
-    border-color: var(--tw-prose-hr);
-  }
-  
-  .dark\:prose-invert thead {
-    border-bottom-color: var(--tw-prose-th-borders);
-  }
-  
-  .dark\:prose-invert tbody tr {
-    border-bottom-color: var(--tw-prose-td-borders);
-  }
-}
 
 /* Mobile-specific utilities */
 
