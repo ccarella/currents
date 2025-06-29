@@ -51,7 +51,9 @@ export function generateTestPost() {
 }
 
 // Test data creation utilities
-export async function createTestUser(userData = generateTestUser()) {
+export async function createTestUser(
+  userData = generateTestUser()
+): Promise<Required<TestUser>> {
   try {
     // Create auth user
     const { data: authData, error: authError } =
@@ -223,7 +225,7 @@ export const testFixtures = {
 
   // Multiple users
   async multipleUsers(count: number = 3) {
-    const users: TestUser[] = [];
+    const users: Required<TestUser>[] = [];
 
     for (let i = 0; i < count; i++) {
       const user = await createTestUser();
