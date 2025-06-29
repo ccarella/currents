@@ -76,10 +76,7 @@ export default function PreviewPane({
       }
 
       return (
-        <code
-          className="px-1 py-0.5 rounded bg-gray-100 dark:bg-gray-800 text-sm"
-          {...props}
-        >
+        <code className="px-1 py-0.5 rounded bg-gray-100 text-sm" {...props}>
           {children}
         </code>
       );
@@ -117,9 +114,9 @@ export default function PreviewPane({
     <div
       ref={previewRef}
       onScroll={handleScroll}
-      className="h-full overflow-y-auto p-8 bg-white dark:bg-gray-900"
+      className="h-full overflow-y-auto p-8 bg-white"
     >
-      <div className="prose prose-slate dark:prose-invert max-w-none">
+      <div className="prose prose-slate max-w-none">
         <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
           {content}
         </ReactMarkdown>

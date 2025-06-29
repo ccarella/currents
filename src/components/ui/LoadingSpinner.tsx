@@ -22,7 +22,7 @@ export default function LoadingSpinner({
       <div
         className={cn(
           'animate-spin rounded-full border-t-transparent',
-          'border-gray-900 dark:border-gray-100',
+          'border-gray-900',
           sizeClasses[size]
         )}
         role="status"

@@ -82,11 +82,11 @@ export function ServiceWorkerRegistration() {
 
   return (
     <div className="fixed bottom-4 right-4 z-50 max-w-sm">
-      <div className="bg-white dark:bg-neutral-800 rounded-lg shadow-lg p-4 border border-neutral-200 dark:border-neutral-700">
-        <h3 className="text-sm font-semibold text-neutral-900 dark:text-neutral-100 mb-2">
+      <div className="bg-white rounded-lg shadow-lg p-4 border border-neutral-200">
+        <h3 className="text-sm font-semibold text-neutral-900 mb-2">
           Update Available
         </h3>
-        <p className="text-sm text-neutral-600 dark:text-neutral-400 mb-3">
+        <p className="text-sm text-neutral-600 mb-3">
           A new version of the app is available. Would you like to refresh to
           get the latest version?
         </p>
@@ -99,7 +99,7 @@ export function ServiceWorkerRegistration() {
           </button>
           <button
             onClick={handleDismiss}
-            className="px-3 py-1.5 text-sm font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700 rounded-md transition-colors"
+            className="px-3 py-1.5 text-sm font-medium text-neutral-700 hover:bg-neutral-100 rounded-md transition-colors"
           >
             Later
           </button>

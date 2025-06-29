@@ -77,7 +77,7 @@ export default function PostView({ post }: PostViewProps) {
             />
             {isCheckingOwnership ? (
               <div className="inline-flex items-center px-3 py-1.5">
-                <div className="animate-pulse bg-gray-200 dark:bg-gray-700 rounded-md h-8 w-16" />
+                <div className="animate-pulse bg-gray-200 rounded-md h-8 w-16" />
               </div>
             ) : isOwner ? (
               <Link
