@@ -23,16 +23,18 @@ const supabaseUrl =
 const supabaseAnonKey = process.env['NEXT_PUBLIC_SUPABASE_ANON_KEY'] || '';
 const supabaseServiceKey = process.env['SUPABASE_SERVICE_ROLE_KEY'] || '';
 
-// Validate environment variables
-if (!supabaseServiceKey) {
-  throw new Error(
-    'SUPABASE_SERVICE_ROLE_KEY is required for test data management'
-  );
-}
-
 // Create Supabase clients
 export const supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
 export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+
+// Validate environment variables only when functions are actually used
+function validateServiceKey() {
+  if (!supabaseServiceKey) {
+    throw new Error(
+      'SUPABASE_SERVICE_ROLE_KEY is required for test data management'
+    );
+  }
+}
 
 // Test data generators
 export function generateTestUser() {
@@ -61,6 +63,7 @@ export function generateTestPost() {
 export async function createTestUser(
   userData = generateTestUser()
 ): Promise<Required<TestUser>> {
+  validateServiceKey();
   try {
     // Create auth user
     const { data: authData, error: authError } =
@@ -90,6 +93,7 @@ export async function createTestUser(
 }
 
 export async function deleteTestUser(userId: string) {
+  validateServiceKey();
   try {
     // Delete user (this should cascade to profile)
     const { error } = await supabaseAdmin.auth.admin.deleteUser(userId);
@@ -104,6 +108,7 @@ export async function createTestPost(
   authorId: string,
   postData = generateTestPost()
 ) {
+  validateServiceKey();
   try {
     const { data, error } = await supabaseAdmin
       .from('posts')
@@ -126,6 +131,7 @@ export async function createTestPost(
 }
 
 export async function deleteTestPost(postId: string) {
+  validateServiceKey();
   try {
     const { error } = await supabaseAdmin
       .from('posts')
@@ -164,6 +170,7 @@ export async function signOutUser(page: Page) {
 
 // Test data cleanup utilities
 export async function cleanupTestUsers(emailPattern: string = 'test.user.') {
+  validateServiceKey();
   try {
     // Get all test users
     const { data: profiles, error: profileError } = await supabaseAdmin
@@ -187,6 +194,7 @@ export async function cleanupTestUsers(emailPattern: string = 'test.user.') {
 }
 
 export async function cleanupTestPosts(titlePattern: string = 'Test Post') {
+  validateServiceKey();
   try {
     const { data: posts, error } = await supabaseAdmin
       .from('posts')
