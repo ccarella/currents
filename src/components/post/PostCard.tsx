@@ -53,7 +53,7 @@ export default function PostCard({ post }: PostCardProps) {
   });
 
   const { truncated: truncatedContent, isTruncated } = truncateContent(
-    post.content,
+    post.content || '',
     CHARACTER_LIMIT
   );
 
