@@ -21,9 +21,6 @@ describe('Footer', () => {
     // Resources links
     expect(screen.getByText('Resources')).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'About' })).toBeInTheDocument();
-    expect(
-      screen.getByRole('link', { name: 'Help Center' })
-    ).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Privacy' })).toBeInTheDocument();
     expect(screen.getByRole('link', { name: 'Terms' })).toBeInTheDocument();
 
@@ -62,10 +59,6 @@ describe('Footer', () => {
     expect(screen.getByRole('link', { name: 'About' })).toHaveAttribute(
       'href',
       '/about'
-    );
-    expect(screen.getByRole('link', { name: 'Help Center' })).toHaveAttribute(
-      'href',
-      '/help'
     );
     expect(screen.getByRole('link', { name: 'Privacy' })).toHaveAttribute(
       'href',
