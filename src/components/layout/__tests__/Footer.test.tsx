@@ -90,8 +90,13 @@ describe('Footer', () => {
     // Check external link attributes
     expect(twitterLink).toHaveAttribute('target', '_blank');
     expect(twitterLink).toHaveAttribute('rel', 'noopener noreferrer');
+    expect(twitterLink).toHaveAttribute('href', 'https://twitter.com');
     expect(githubLink).toHaveAttribute('target', '_blank');
     expect(githubLink).toHaveAttribute('rel', 'noopener noreferrer');
+    expect(githubLink).toHaveAttribute(
+      'href',
+      'https://github.com/ccarella/currents'
+    );
   });
 
   it('has proper semantic structure', () => {
