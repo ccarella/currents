@@ -1,3 +1,6 @@
+'use client';
+
+import { useRouter } from 'next/navigation';
 import OptimizedImage from '@/components/OptimizedImage';
 import type { Database } from '@/types/database.types';
 
@@ -14,12 +17,49 @@ interface PostCardProps {
   post: PostWithProfile;
 }
 
+const CHARACTER_LIMIT = 500;
+
+function truncateContent(
+  content: string,
+  limit: number
+): { truncated: string; isTruncated: boolean } {
+  if (content.length <= limit) {
+    return { truncated: content, isTruncated: false };
+  }
+
+  // Find the last space before the limit to avoid cutting words
+  let truncateIndex = limit;
+  while (truncateIndex > 0 && content[truncateIndex] !== ' ') {
+    truncateIndex--;
+  }
+
+  // If no space found, just use the limit
+  if (truncateIndex === 0) {
+    truncateIndex = limit;
+  }
+
+  return {
+    truncated: content.slice(0, truncateIndex).trim() + '...',
+    isTruncated: true,
+  };
+}
+
 export default function PostCard({ post }: PostCardProps) {
+  const router = useRouter();
   const formattedDate = new Date(post.created_at).toLocaleDateString('en-US', {
     month: 'short',
     day: 'numeric',
     year: 'numeric',
   });
+
+  const { truncated: truncatedContent, isTruncated } = truncateContent(
+    post.content || '',
+    CHARACTER_LIMIT
+  );
+
+  const handleShowMore = () => {
+    router.push(`/${post.profiles.username}`);
+  };
 
   return (
     <article className="bg-white rounded-lg shadow p-6">
@@ -57,8 +97,16 @@ export default function PostCard({ post }: PostCardProps) {
             </h3>
           )}
           <p className="mt-2 text-gray-700 whitespace-pre-wrap">
-            {post.content}
+            {truncatedContent}
           </p>
+          {isTruncated && (
+            <button
+              onClick={handleShowMore}
+              className="mt-2 text-blue-600 hover:text-blue-800 font-medium text-sm transition-colors"
+            >
+              Show more
+            </button>
+          )}
         </div>
       </div>
     </article>

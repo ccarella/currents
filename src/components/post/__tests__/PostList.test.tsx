@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import { useRouter } from 'next/navigation';
 import PostList from '../PostList';
 import { PostsServiceProvider } from '@/lib/posts-context';
 import { PostsService } from '@/lib/posts';
@@ -15,13 +16,32 @@ vi.mock('@/hooks/useInfiniteScroll', () => ({
   useInfiniteScroll: vi.fn(),
 }));
 
+// Mock Next.js navigation
+vi.mock('next/navigation', () => ({
+  useRouter: vi.fn(),
+}));
+
 describe('PostList', () => {
   let mockPostsService: {
     getActivePosts: ReturnType<typeof vi.fn>;
     getActivePostsPaginated: ReturnType<typeof vi.fn>;
   };
+  const mockPush = vi.fn();
+  const mockRefresh = vi.fn();
 
   beforeEach(() => {
+    vi.clearAllMocks();
+
+    // Setup router mock
+    vi.mocked(useRouter).mockReturnValue({
+      push: mockPush,
+      refresh: mockRefresh,
+      back: vi.fn(),
+      forward: vi.fn(),
+      replace: vi.fn(),
+      prefetch: vi.fn(),
+    } as ReturnType<typeof useRouter>);
+
     mockPostsService = {
       getActivePosts: vi.fn(),
       getActivePostsPaginated: vi.fn(),
@@ -103,7 +123,10 @@ describe('PostList', () => {
       </PostsServiceProvider>
     );
 
-    expect(screen.getByText(/loading/i)).toBeInTheDocument();
+    // Check for loading skeletons instead of loading text
+    expect(
+      screen.getByRole('status', { name: 'Loading posts' })
+    ).toBeInTheDocument();
   });
 
   it('should handle error state gracefully', async () => {
