@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { title, content, excerpt, status } = validationResult.data;
+    const { title, content, status } = validationResult.data;
 
     const supabase = await createClient();
     const postsService = new PostsService(supabase);
@@ -121,11 +121,9 @@ export async function POST(request: NextRequest) {
     const post = await postsService.createPost({
       author_id: user.id,
       title,
-      content: content || null,
-      excerpt: excerpt || null,
+      content: content || '',
       slug,
       status,
-      published_at: status === 'published' ? new Date().toISOString() : null,
     });
 
     return NextResponse.json({ post }, { status: 201 });
