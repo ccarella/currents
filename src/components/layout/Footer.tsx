@@ -26,12 +26,6 @@ export default function Footer() {
               </h4>
               <nav className="flex flex-col space-y-1">
                 <Link
-                  href="/explore"
-                  className="text-sm text-gray-600 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-white py-2 -ml-1 pl-1 rounded hover:bg-gray-50 dark:hover:bg-gray-900"
-                >
-                  Explore
-                </Link>
-                <Link
                   href="/write"
                   className="text-sm text-gray-600 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-white py-2 -ml-1 pl-1 rounded hover:bg-gray-50 dark:hover:bg-gray-900"
                 >

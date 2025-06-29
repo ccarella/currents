@@ -51,12 +51,6 @@ export default function Header() {
               {/* Desktop Navigation */}
               <nav className="hidden md:flex items-center space-x-6">
                 <Link
-                  href="/explore"
-                  className="text-sm font-medium text-gray-600 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
-                >
-                  Explore
-                </Link>
-                <Link
                   href="/about"
                   className="text-sm font-medium text-gray-600 transition-colors hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
                 >
@@ -122,13 +116,6 @@ export default function Header() {
         >
           <nav className="h-full overflow-y-auto safe-bottom">
             <div className="px-4 py-6 space-y-1">
-              <Link
-                href="/explore"
-                className="block px-4 py-3 rounded-lg text-lg font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors touch-target"
-                onClick={() => setIsMobileMenuOpen(false)}
-              >
-                Explore
-              </Link>
               <Link
                 href="/about"
                 className="block px-4 py-3 rounded-lg text-lg font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800 transition-colors touch-target"

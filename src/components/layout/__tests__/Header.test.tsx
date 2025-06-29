@@ -62,7 +62,6 @@ describe('Header Mobile Menu', () => {
 
     // Menu items should be visible
     expect(screen.getByRole('navigation')).toBeInTheDocument();
-    expect(screen.getByText('Explore')).toBeInTheDocument();
     expect(screen.getByText('About')).toBeInTheDocument();
   });
 
@@ -89,8 +88,8 @@ describe('Header Mobile Menu', () => {
     fireEvent.click(menuButton);
 
     // Click a navigation link
-    const exploreLink = screen.getByText('Explore');
-    fireEvent.click(exploreLink);
+    const aboutLink = screen.getByText('About');
+    fireEvent.click(aboutLink);
 
     // Menu should be hidden
     expect(screen.queryByRole('navigation')).not.toBeInTheDocument();
