@@ -18,10 +18,10 @@ test.describe('User Authentication', () => {
     await page.fill('input[id="password"]', testPassword);
 
     // Wait for username availability check
-    await page.waitForTimeout(600); // Wait for debounce
-
-    // Check for username availability indicator
-    await expect(page.locator('svg.text-green-500')).toBeVisible();
+    // Wait for the availability indicator to appear after debounce
+    await expect(page.locator('svg.text-green-500')).toBeVisible({
+      timeout: 2000,
+    });
 
     // Submit the form
     await page.click('button[type="submit"]');
@@ -79,14 +79,13 @@ test.describe('User Authentication', () => {
     await page.fill('input[id="password"]', 'ValidPassword123');
 
     // Wait for username availability check
-    await page.waitForTimeout(600); // Wait for debounce
-
-    // Check for username unavailable indicator
     const usernameError = page.locator('#username-error');
     const unavailableIcon = page.locator('svg.text-red-500');
 
-    // Either the error message or the red X icon should be visible
-    await expect(usernameError.or(unavailableIcon)).toBeVisible();
+    // Either the error message or the red X icon should be visible after debounce
+    await expect(usernameError.or(unavailableIcon)).toBeVisible({
+      timeout: 2000,
+    });
 
     // Submit button should be disabled
     await expect(page.locator('button[type="submit"]')).toBeDisabled();
@@ -107,10 +106,9 @@ test.describe('User Sign In', () => {
     // Navigate to sign in page
     await page.goto('/auth/sign-in');
 
-    // For this test to work, you need a test user in your database
-    // In a real test environment, you'd set this up in a beforeAll hook
-    const testEmail = 'test@example.com';
-    const testPassword = 'TestPassword123';
+    // Use the default test user created in global setup
+    const testEmail = process.env['TEST_USER_EMAIL'] || 'test@example.com';
+    const testPassword = process.env['TEST_USER_PASSWORD'] || 'TestPassword123';
 
     // Fill in the sign-in form
     await page.fill('input[type="email"]', testEmail);

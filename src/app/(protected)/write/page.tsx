@@ -258,6 +258,7 @@ export default function WritePage() {
                   placeholder="Enter your title..."
                   className="w-full text-3xl font-bold placeholder-gray-400 border-none outline-none"
                   aria-label="Post title"
+                  data-testid="post-title-input"
                 />
               </div>
               <button
@@ -276,6 +277,7 @@ export default function WritePage() {
                       ? 'Update post'
                       : 'Publish post'
                 }
+                data-testid="publish-button"
               >
                 {isEditMode ? 'Update Post' : 'Publish'}
               </button>
@@ -330,6 +332,7 @@ export default function WritePage() {
             onClick={handleReplace}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
             aria-label="Confirm post replacement"
+            data-testid="replace-post-button"
           >
             Replace Post
           </button>

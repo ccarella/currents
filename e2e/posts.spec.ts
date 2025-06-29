@@ -82,12 +82,12 @@ test.describe('Post Creation', () => {
 
     // Only fill in title, no content
     await page.fill(
-      'input[placeholder="Enter your title..."]',
+      '[data-testid="post-title-input"]',
       'Title without content'
     );
 
     // Try to publish
-    await page.click('button:has-text("Publish")');
+    await page.click('[data-testid="publish-button"]');
 
     // Should see error message
     await expect(

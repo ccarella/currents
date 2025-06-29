@@ -79,8 +79,29 @@ export async function createTestUser(
     if (authError) throw authError;
 
     // Profile should be created automatically by trigger
-    // Wait a bit for the trigger to complete
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    // Poll for profile creation with exponential backoff
+    const maxRetries = 10;
+    let profileCreated = false;
+
+    for (let i = 0; i < maxRetries; i++) {
+      const { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('*')
+        .eq('id', authData.user.id)
+        .single();
+
+      if (profile) {
+        profileCreated = true;
+        break;
+      }
+
+      // Exponential backoff: 100ms, 200ms, 400ms, etc.
+      await new Promise((resolve) => setTimeout(resolve, 100 * Math.pow(2, i)));
+    }
+
+    if (!profileCreated) {
+      throw new Error('Profile creation timed out');
+    }
 
     return {
       ...userData,

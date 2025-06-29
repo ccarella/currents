@@ -36,17 +36,23 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
-      - name: Run E2E tests
+      - name: Check Supabase Configuration
+        id: check-supabase
         run: |
-          if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ] || [ -z "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ]; then
-            echo "Supabase environment variables not configured. Skipping E2E tests."
+          if [ -n "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" ] && [ -n "${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" ]; then
+            echo "configured=true" >> $GITHUB_OUTPUT
+          else
+            echo "configured=false" >> $GITHUB_OUTPUT
+            echo "Supabase environment variables not configured. E2E tests will be skipped."
             echo "To enable E2E tests, configure the following secrets in your repository:"
             echo "  - NEXT_PUBLIC_SUPABASE_URL"
             echo "  - NEXT_PUBLIC_SUPABASE_ANON_KEY"
             echo "  - SUPABASE_SERVICE_ROLE_KEY"
-            exit 0
           fi
-          npm run test:e2e
+
+      - name: Run E2E tests
+        if: steps.check-supabase.outputs.configured == 'true'
+        run: npm run test:e2e
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
@@ -96,13 +102,19 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
-      - name: Run visual regression tests
+      - name: Check Supabase Configuration
+        id: check-supabase-visual
         run: |
-          if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ] || [ -z "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ]; then
-            echo "Supabase environment variables not configured. Skipping visual regression tests."
-            exit 0
+          if [ -n "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" ] && [ -n "${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" ]; then
+            echo "configured=true" >> $GITHUB_OUTPUT
+          else
+            echo "configured=false" >> $GITHUB_OUTPUT
+            echo "Supabase environment variables not configured. Visual regression tests will be skipped."
           fi
-          npx playwright test visual-regression.spec.ts --project=${{ matrix.browser }}
+
+      - name: Run visual regression tests
+        if: steps.check-supabase-visual.outputs.configured == 'true'
+        run: npx playwright test visual-regression.spec.ts --project=${{ matrix.browser }}
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
@@ -155,13 +167,19 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
 
-      - name: Run performance tests
+      - name: Check Supabase Configuration
+        id: check-supabase-perf
         run: |
-          if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ] || [ -z "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ]; then
-            echo "Supabase environment variables not configured. Skipping performance tests."
-            exit 0
+          if [ -n "${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}" ] && [ -n "${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}" ]; then
+            echo "configured=true" >> $GITHUB_OUTPUT
+          else
+            echo "configured=false" >> $GITHUB_OUTPUT
+            echo "Supabase environment variables not configured. Performance tests will be skipped."
           fi
-          npx playwright test performance.spec.ts --project=chromium
+
+      - name: Run performance tests
+        if: steps.check-supabase-perf.outputs.configured == 'true'
+        run: npx playwright test performance.spec.ts --project=chromium
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
